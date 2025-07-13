@@ -1,4 +1,12 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+// src/modules/ingest/controllers/ingest.controller.ts
+
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { IngestService } from '../services/ingest.service';
 import { IngestDataDto } from '../dto/ingest-data.dto';
 
@@ -8,8 +16,8 @@ export class IngestController {
 
   @Post()
   @HttpCode(HttpStatus.ACCEPTED)
-  ingestData(@Body() ingestDataDto: IngestDataDto) {
-    this.ingestService.processData(ingestDataDto);
+  async ingestData(@Body() ingestDataDto: IngestDataDto) {
+    await this.ingestService.processData(ingestDataDto);
     return { message: 'Datos recibidos y en procesamiento.' };
   }
 }

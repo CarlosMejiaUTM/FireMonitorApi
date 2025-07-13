@@ -4,7 +4,7 @@ import { CreateNodeDto } from '../dto/create-node.dto';
 import { UpdateNodeDto } from '../dto/update-node.dto';
 import { FirestoreService } from 'src/common/database/firestore.service';
 import { CollectionReference, DocumentData, Query } from 'firebase-admin/firestore';
-import { IngestDataDto } from 'src/modules/ingest/dto/ingest-data.dto';
+import { IngestDataDto, CoordenadasDto } from 'src/modules/ingest/dto/ingest-data.dto';
 
 @Injectable()
 export class FirestoreNodesRepository implements NodesRepository, OnModuleInit {
@@ -16,14 +16,16 @@ export class FirestoreNodesRepository implements NodesRepository, OnModuleInit {
     this._nodesCollection = this.firestore.db.collection('nodes');
   }
 
-  async create(data: CreateNodeDto, userId: string): Promise<any> {
-    const nodeToSave = {
+  async create(data: CreateNodeDto, userId?: string): Promise<any> {
+    const nodeToSave: any = {
       nombre: data.nombre,
       tipo: data.tipo,
       coordenadas: { ...data.coordenadas },
-      userId,
       createdAt: new Date().toISOString(),
     };
+    if (userId) {
+      nodeToSave.userId = userId;
+    }
     const docRef = await this._nodesCollection.add(nodeToSave);
     const doc = await docRef.get();
     return { id: doc.id, ...doc.data() };
@@ -106,5 +108,18 @@ export class FirestoreNodesRepository implements NodesRepository, OnModuleInit {
       history.push({ id: doc.id, ...doc.data() });
     });
     return history;
+  }
+
+  // Método corregido para actualizar coordenadas sin error Firestore
+  async updateCoordinates(nodeId: string, coordenadas: CoordenadasDto): Promise<void> {
+    const nodeRef = this._nodesCollection.doc(nodeId);
+
+    // Convertimos la instancia a objeto plano para evitar error de Firestore
+    const plainCoordinates = { ...coordenadas };
+
+    await nodeRef.update({
+      coordenadas: plainCoordinates,
+      ultimaActualizacion: new Date().toISOString(),
+    });
   }
 }

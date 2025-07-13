@@ -14,23 +14,23 @@ export class IngestService {
   ) {}
 
   async processData(data: IngestDataDto): Promise<void> {
-    // 1. Buscamos el nodo completo en la BD para obtener sus datos (incluyendo coordenadas)
     const node = await this.nodesRepository.findById(data.nodeId);
     if (!node) {
       console.error(`Error: Nodo con ID "${data.nodeId}" no encontrado al intentar ingestar datos.`);
       throw new NotFoundException(`Nodo con ID "${data.nodeId}" no encontrado.`);
     }
 
-    // 2. Guardamos la nueva lectura en el historial del nodo
+    // Guardar lectura en historial
     await this.nodesRepository.updateLastReading(data.nodeId, data);
-    
-    // 3. Volvemos a obtener el nodo para tener los datos más actualizados
+
+    // Actualizar coordenadas con las que llegan en el ingest
+    await this.nodesRepository.updateCoordinates(data.nodeId, data.coordenadas);
+
+    // Obtener nodo actualizado para alertas y notificaciones
     const updatedNode = await this.nodesRepository.findById(data.nodeId);
 
-    // 4. Revisamos si los nuevos datos deben generar una alerta
     this.checkForAlerts(updatedNode, data);
-    
-    // 5. Notificamos al frontend con el estado completo y actualizado del nodo
+
     const nodesService = new NodesService(this.nodesRepository);
     const status = nodesService['calculateNodeStatus'](updatedNode);
     this.eventsGateway.sendNodeUpdate({ ...updatedNode, status });
@@ -39,10 +39,9 @@ export class IngestService {
   private checkForAlerts(node: any, data: IngestDataDto) {
     const { temperatura, fuegoDetectado, humoDetectado, concentracionGas } = data.lectura;
 
-    // Construimos el payload de la alerta usando las coordenadas guardadas del nodo
     const alertPayload = {
       hora: data.timestamp,
-      coordenadas: node.coordenadas, // <-- Usamos la ubicación guardada en la BD
+      coordenadas: node.coordenadas,
       nodo: { id: node.id, nombre: node.nombre },
       userId: node.userId,
     };

@@ -9,8 +9,7 @@ import {
   IsOptional,
 } from 'class-validator';
 
-// Define la estructura del objeto anidado 'lectura'
-class LecturaDto {
+export class LecturaDto {
   @IsNumber()
   temperatura: number;
 
@@ -28,7 +27,14 @@ class LecturaDto {
   concentracionGas?: number;
 }
 
-// Define el payload principal que envía el sensor
+export class CoordenadasDto {  // <-- aquí exportar la clase
+  @IsNumber()
+  lat: number;
+
+  @IsNumber()
+  lng: number;
+}
+
 export class IngestDataDto {
   @IsString()
   @IsNotEmpty()
@@ -38,10 +44,13 @@ export class IngestDataDto {
   @IsNotEmpty()
   timestamp: string;
 
-  // El campo 'coordenadas' ha sido eliminado de aquí
-
   @ValidateNested()
   @Type(() => LecturaDto)
   @IsNotEmpty()
   lectura: LecturaDto;
+
+  @ValidateNested()
+  @Type(() => CoordenadasDto)
+  @IsNotEmpty()
+  coordenadas: CoordenadasDto;
 }

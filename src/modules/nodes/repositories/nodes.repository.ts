@@ -3,7 +3,7 @@ import { UpdateNodeDto } from '../dto/update-node.dto';
 import { IngestDataDto } from 'src/modules/ingest/dto/ingest-data.dto';
 
 export abstract class NodesRepository {
-  abstract create(data: CreateNodeDto, userId: string): Promise<any>;
+  abstract create(data: CreateNodeDto, userId?: string): Promise<any>;
   abstract findAll(filters?: { tipo?: string; userId?: string }): Promise<any[]>;
   abstract findAllByUserId(userId: string): Promise<any[]>;
   abstract findById(id: string): Promise<any | null>;
@@ -12,4 +12,5 @@ export abstract class NodesRepository {
   abstract updateLastReading(nodeId: string, readingData: IngestDataDto): Promise<void>;
   abstract updateTimestamp(nodeId: string): Promise<void>;
   abstract findHistoryById(nodeId: string): Promise<any[]>;
+  abstract updateCoordinates(nodeId: string, coordenadas: { lat: number; lng: number }): Promise<void>;
 }
