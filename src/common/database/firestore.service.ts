@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
-import * as path from 'path';
 
 @Injectable()
 export class FirestoreService implements OnModuleInit {
@@ -14,28 +13,26 @@ export class FirestoreService implements OnModuleInit {
   constructor(private configService: ConfigService) {}
 
   onModuleInit() {
-    const credentialsPath = this.configService.get<string>(
-      'GOOGLE_APPLICATION_CREDENTIALS',
-    );
+    const base64Credentials = this.configService.get<string>('GCP_CREDENTIALS_BASE64');
 
-    if (!credentialsPath) {
+    if (!base64Credentials) {
       throw new InternalServerErrorException(
-        'La variable GOOGLE_APPLICATION_CREDENTIALS no está definida en el archivo .env',
+        'La variable GCP_CREDENTIALS_BASE64 no está definida en el archivo .env',
       );
     }
 
-    const serviceAccountPath = path.join(process.cwd(), credentialsPath);
+    // Decodificamos la cadena base64 a JSON
+    const serviceAccount = JSON.parse(Buffer.from(base64Credentials, 'base64').toString('utf8'));
 
     if (!admin.apps.length) {
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccountPath),
+        credential: admin.credential.cert(serviceAccount),
       });
       console.log('✅ Firebase Admin inicializado correctamente.');
     }
 
     this._db = admin.firestore();
 
-   
     this._db.settings({
       ignoreUndefinedProperties: true,
     });
