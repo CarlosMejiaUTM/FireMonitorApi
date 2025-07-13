@@ -51,7 +51,7 @@ El diseño de esta API se basa en principios de software profesional para asegur
 #### b. Instalación
 1.  **Clonar el repositorio:**
     ```bash
-    git clone [https://github.com/CarlosMejiaUTM/FireMonitorApi.git](https://github.com/CarlosMejiaUTM/FireMonitorApi.git)
+    git clone https://github.com/CarlosMejiaUTM/FireMonitorApi.git
     cd FireMonitorApi
     ```
 2.  **Instalar dependencias:**
@@ -69,7 +69,7 @@ El diseño de esta API se basa en principios de software profesional para asegur
     * Añade las siguientes variables:
     ```ini
     GOOGLE_APPLICATION_CREDENTIALS=./gcp-credentials.json
-    JWT_SECRET=UNA_CLAVE_SECRETA_MUY_LARGA_Y_SEGURA_PARA_TUS_TOKENS
+    JWT_SECRET=csm_el_real_madrid
     ```
 5.  **Configurar Firestore:**
     * En la consola de Firebase, ve a `Firestore Database` y haz clic en `Crear base de datos`.
