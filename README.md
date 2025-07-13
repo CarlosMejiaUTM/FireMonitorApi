@@ -8,7 +8,7 @@ Bienvenido a la documentación oficial y detallada de la API de FireMonitor. Est
 2.  [Stack Tecnológico](#2-stack-tecnológico)
 3.  [Guía de Instalación y Configuración](#3-guía-de-instalación-y-configuración)
 4.  [Scripts Importantes](#4-scripts-importantes)
-5.  [Conceptos Clave de la Arquitectura (Explicados)](#5-conceptos-clave-de-la-arquitectura-explicados)
+5.  [Conceptos Clave de la Arquitectura (Explicados en Detalle)](#5-conceptos-clave-de-la-arquitectura-explicados-en-detalle)
 6.  [Documentación Detallada de Endpoints](#6-documentación-detallada-de-endpoints)
 7.  [Documentación de Eventos WebSocket](#7-documentación-de-eventos-websocket)
 8.  [Flujo de Datos Completo (Ejemplo)](#8-flujo-de-datos-completo-ejemplo)
@@ -19,9 +19,11 @@ Bienvenido a la documentación oficial y detallada de la API de FireMonitor. Est
 
 El diseño de esta API se basa en principios de software profesional para asegurar que sea un sistema robusto y fácil de mantener a largo plazo.
 
-* **Modularidad Extrema:** Cada funcionalidad principal (nodos, alertas, usuarios) vive en su propio "Módulo". Piensa en cada módulo como una caja de LEGO especializada: una tiene todas las piezas para construir autos, otra para construir casas. Si quieres modificar los autos, solo abres esa caja, sin tocar las demás.
+* **Modularidad Extrema:** Cada funcionalidad principal (nodos, alertas, usuarios) vive en su propio **Módulo**. Piensa en cada módulo como una caja de LEGO especializada: una tiene todas las piezas para construir autos, otra para construir casas. Si quieres modificar los autos, solo abres esa caja, sin tocar las demás. Esto evita que los cambios en una parte del sistema rompan otra de forma inesperada.
+
 * **Archivos Pequeños, Responsabilidad Única (SRP):** Cada archivo tiene un solo trabajo. El controlador solo atiende peticiones, el servicio solo piensa en la lógica, y el repositorio solo habla con la base de datos. Esto facilita enormemente la lectura, el testing y el debugging.
-* **Inyección de Dependencias (DI):** Usamos intensivamente el sistema de NestJS para desacoplar las clases. Un servicio no sabe cómo se conecta a la base de datos; solo conoce el "contrato" (la clase abstracta) del repositorio que necesita.
+
+* **Inyección de Dependencias (DI):** Este es un concepto clave de NestJS. En lugar de que un componente cree sus propias dependencias (ej. `const miRepo = new FirestoreNodesRepository()`), se las "pide" a NestJS en su constructor. NestJS se encarga de crear y proveer esa única instancia. Esto facilita las pruebas y mantiene el código desacoplado.
 
 ---
 
@@ -38,6 +40,7 @@ El diseño de esta API se basa en principios de software profesional para asegur
 | **bcrypt** | Para encriptar (hashear) de forma segura las contraseñas. |
 | **Passport.js** | Middleware para manejar la autenticación. |
 | **JWT** | JSON Web Tokens, el método para la autenticación sin estado. |
+| **Nodemailer** | Para el envío de correos electrónicos transaccionales. |
 
 ---
 
@@ -65,50 +68,63 @@ El diseño de esta API se basa en principios de software profesional para asegur
     * **¡MUY IMPORTANTE!** Este archivo es secreto. Asegúrate de que tu archivo `.gitignore` contenga la línea `gcp-credentials.json` para no subirlo nunca a un repositorio público.
 
 4.  **Crear archivo de entorno `.env`:**
-    * En la raíz del proyecto, crea un archivo llamado `.env`.
-    * Añade las siguientes variables:
+    * En la raíz del proyecto, crea un archivo `.env`.
+    * Pega y rellena las siguientes variables:
     ```ini
     GOOGLE_APPLICATION_CREDENTIALS=./gcp-credentials.json
     JWT_SECRET=UNA_CLAVE_SECRETA_MUY_LARGA_Y_SEGURA_PARA_TUS_TOKENS
+    
+    # Credenciales para el envío de correos (usar una "Contraseña de Aplicación" de Google)
+    MAIL_HOST=smtp.gmail.com
+    MAIL_USER=tu_correo_de_gmail@gmail.com
+    MAIL_PASS=tu_contraseña_de_aplicacion_de_16_letras
+    MAIL_FROM="FireMonitor" <tu_correo_de_gmail@gmail.com>
     ```
+
 5.  **Configurar Firestore:**
     * En la consola de Firebase, ve a `Firestore Database` y haz clic en `Crear base de datos`.
     * Inicia en **modo de producción** y elige una ubicación.
-    * Ve a la pestaña `Índices` y asegúrate de que el índice compuesto para la colección `alerts` esté creado y habilitado. Si una consulta falla por falta de índice, la terminal de NestJS te dará un enlace directo para crearlo.
+    * Ve a la pestaña `Índices` y crea los índices compuestos que la API te pida en la terminal si una consulta falla.
 
 ---
 
 ## 4. Scripts Importantes
 
-* **Iniciar el servidor de desarrollo:**
-    ```bash
-    npm run start:dev
-    ```
+* **Iniciar en modo desarrollo:** `npm run start:dev`
     * **Cuándo usarlo:** Siempre que estés desarrollando. Reinicia el servidor automáticamente con cada cambio.
 
-* **Crear usuario admin:**
-    ```bash
-    node seed.js
-    ```
+* **Crear usuario admin:** `node seed.js`
     * **Cuándo usarlo:** La primera vez que configuras el proyecto para crear el usuario `admin` inicial.
 
-* **Limpiar base de datos:**
-    ```bash
-    node clear-data.js
-    ```
-    * **Cuándo usarlo:** Cuando quieras borrar todos los nodos y alertas para empezar de cero.
+* **Limpiar base de datos:** `node clear-data.js`
+    * **Cuándo usarlo:** Cuando quieras borrar todos los nodos, usuarios y alertas para empezar de cero.
 
 ---
 
-## 5. Conceptos Clave de la Arquitectura (Explicados)
+## 5. Conceptos Clave de la Arquitectura (Explicados en Detalle)
 
-* **Módulos: Las Cajas de LEGO:** Un módulo (`@Module()`) agrupa componentes relacionados. Define qué importa, qué controladores usa, qué servicios provee y qué servicios exporta para que otros módulos los puedan usar.
-* **Controladores: Los Recepcionistas:** Un controlador (`@Controller()`) es la puerta de entrada a la API. Recibe peticiones HTTP, usa DTOs para validar los datos, llama al servicio correspondiente y devuelve la respuesta.
-* **Servicios: El Cerebro:** Un servicio (`@Injectable()`) contiene la lógica de negocio. Orquesta las operaciones, pero no sabe nada de HTTP ni de la base de datos directamente.
-* **Repositorios: Los Archivistas Expertos:** Usamos el Patrón Repositorio para desacoplar la lógica de la base de datos. El servicio habla con un "contrato" (clase abstracta), y la implementación concreta (`FirestoreNodesRepository`) es la única que sabe cómo hablar con Firestore.
-* **DTOs: Los Formularios con Reglas:** Un DTO (Data Transfer Object) es una clase que define la forma y las reglas de los datos que se transfieren en una petición, asegurando que solo recibamos información válida.
-* **Guards: Los Guardias de Seguridad:** Un Guard (`CanActivate`) es una clase que decide si una petición puede continuar o no. `AuthGuard('jwt')` es el "guardia" que protege nuestras rutas, verificando que el token del usuario sea válido.
-* **WebSockets (Gateways): La Línea Telefónica Directa:** A diferencia de HTTP (una carta), un WebSocket es una llamada telefónica abierta. Permite al servidor "empujar" datos al cliente en tiempo real. Nuestro `AlertsGateway` usa esto para enviar notificaciones instantáneas.
+#### Módulos: Las Cajas de LEGO
+Un módulo (`@Module()`) agrupa componentes relacionados. Define qué importa, qué controladores usa, qué servicios provee y qué servicios exporta para que otros módulos los puedan usar.
+
+#### Controladores: Los Recepcionistas
+Un controlador (`@Controller()`) es la puerta de entrada a tu API. Su trabajo es simple: recibir peticiones HTTP, usar DTOs para validar los datos, llamar al servicio correspondiente y devolver la respuesta.
+
+#### Servicios: El Cerebro
+Un servicio (`@Injectable()`) contiene la lógica de negocio. Por ejemplo, `NodesService` decide si un usuario tiene permiso para ver un nodo. Esta lógica no pertenece ni al controlador ni al repositorio.
+
+#### Repositorios: Los Archivistas Expertos
+Usamos el **Patrón Repositorio** para desacoplar la lógica de negocio de la base de datos.
+* **El Problema:** Sin este patrón, tu `NodesService` tendría código de Firestore por todas partes. Si mañana cambias de base de datos, tendrías que reescribir todo el servicio.
+* **La Solución:** Creamos un "contrato" (`NodesRepository`) que define los métodos que deben existir (ej: `create`, `findById`). El servicio solo habla con este contrato. La clase concreta (`FirestoreNodesRepository`) implementa ese contrato con la lógica específica de Firestore.
+
+#### DTOs: Los Formularios con Reglas
+Un DTO (Data Transfer Object) es una clase que define la **forma de los datos** que se transfieren en una petición. Usamos `class-validator` para validar automáticamente que los datos entrantes son correctos.
+
+#### Guards: Los Guardias de Seguridad
+Un Guard (`CanActivate`) es una clase que decide si una petición puede continuar. `AuthGuard('jwt')` es el "guardia" que protege nuestras rutas, verificando que el token del usuario sea válido.
+
+#### WebSockets (Gateways): La Línea Telefónica Directa
+A diferencia de HTTP (una carta), un WebSocket es una llamada telefónica abierta. Permite al servidor "empujar" datos al cliente en tiempo real. Nuestro `AlertsGateway` usa esto para enviar notificaciones instantáneas.
 
 ---
 
@@ -120,7 +136,7 @@ URL Base: `http://localhost:3000`
 Maneja el registro e inicio de sesión.
 
 #### `POST /auth/register`
-* **Descripción:** Registra un nuevo usuario con rol `user`.
+* **Descripción:** Registra un nuevo usuario con rol `user` y le envía un correo de bienvenida.
 * **Acceso:** Público.
 * **Body:** `CreateUserDto`
     ```json
@@ -134,16 +150,20 @@ Maneja el registro e inicio de sesión.
     ```json
     { "usuario": "admin", "contrasena": "admin12345" }
     ```
-* **Respuesta Exitosa:**
-    ```json
-    { "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
-    ```
+* **Respuesta Exitosa:** `{ "access_token": "eyJhbGciOi..." }`
+
+### Recurso: `users`
+Gestión de usuarios.
+
+#### `GET /users`
+* **Descripción:** Obtiene una lista de todos los usuarios registrados (sin sus contraseñas).
+* **Acceso:** `admin`.
 
 ### Recurso: `nodes`
 Maneja la gestión de los nodos. Todas las rutas requieren autenticación (Bearer Token).
 
 #### `POST /nodes`
-* **Descripción:** Crea un nuevo nodo. Solo un `admin` puede asignar un nodo a un `userId` específico. Si no se provee, se asigna al propio admin.
+* **Descripción:** Crea un nuevo nodo. Solo un `admin` puede asignar un nodo a un `userId` específico.
 * **Acceso:** `admin`.
 * **Body:** `CreateNodeDto`
     ```json
@@ -151,7 +171,7 @@ Maneja la gestión de los nodos. Todas las rutas requieren autenticación (Beare
     ```
 
 #### `GET /nodes`
-* **Descripción:** Obtiene una lista de nodos. Si el solicitante es `admin`, ve todos los nodos. Si es `user`, ve solo los suyos. Incluye el campo calculado `status`.
+* **Descripción:** Obtiene una lista de nodos. Si el solicitante es `admin`, ve todos los nodos. Si es `user`, ve solo los suyos.
 * **Acceso:** `user`, `admin`.
 
 #### `GET /nodes/:id`
@@ -160,7 +180,7 @@ Maneja la gestión de los nodos. Todas las rutas requieren autenticación (Beare
 
 #### `GET /nodes/:id/history`
 * **Descripción:** Obtiene las últimas 20 lecturas de un nodo de tipo `sensor`.
-* **Acceso:** `user`, `admin` (con las mismas reglas de propiedad que `GET /nodes/:id`).
+* **Acceso:** `user`, `admin` (con las mismas reglas de propiedad).
 
 #### `POST /nodes/heartbeat`
 * **Descripción:** Endpoint para que los nodos `repetidor` y `central` reporten que están activos.
@@ -195,10 +215,9 @@ Recibe datos de los sensores.
 Consulta de alertas históricas.
 
 #### `GET /alerts`
-* **Descripción:** Obtiene una lista paginada y filtrable de alertas.
+* **Descripción:** Obtiene una lista paginada y filtrable de alertas. Un `user` solo ve sus propias alertas.
 * **Acceso:** `user`, `admin`.
 * **Query Params (Opcionales):** `tipo`, `desde`, `hasta`, `page`, `limit`.
-* **Ejemplo:** `/alerts?tipo=Fuego%20Detectado&page=1`
 
 ---
 
@@ -207,24 +226,19 @@ Consulta de alertas históricas.
 #### Evento: `newAlert`
 * **Cuándo se emite:** Cuando se genera una alerta grave (fuego, humo, etc.).
 * **Propósito:** Mostrar notificaciones prominentes al usuario.
-* **Payload:** Objeto de la alerta (`{ id, tipo, severidad, hora, nodo, ... }`).
+* **Payload:** Objeto de la alerta.
 
 #### Evento: `nodeUpdate`
-* **Cuándo se emite:** Cada vez que un nodo envía nuevos datos a `/ingest`.
-* **Propósito:** Actualizar el estado (color, datos) del marcador correspondiente en el mapa en vivo.
-* **Payload:** Objeto completo del nodo (`{ id, nombre, tipo, status, coordenadas, ultimaLectura, ... }`).
+* **Cuándo se emite:** Cada vez que un nodo envía nuevos datos.
+* **Propósito:** Actualizar el estado (color, datos) del marcador en el mapa en vivo.
+* **Payload:** Objeto completo del nodo.
 
 ---
 
 ## 8. Flujo de Datos Completo (Ejemplo)
-1.  Un **Nodo Sensor** en el campo lee sus sensores.
-2.  Formatea un **JSON** con su `nodeId` y sus lecturas.
-3.  Envía una petición **`POST /ingest`** a la API.
-4.  El **`IngestService`** recibe los datos y llama al **`NodesRepository`** para guardar la lectura en el historial y actualizar el estado del nodo en Firestore.
-5.  La lógica en **`IngestService`** detecta que `temperatura` es `> 65°C`.
-6.  Llama al **`AlertsService`** para crear una alerta.
-7.  El **`AlertsService`** guarda la alerta en la colección `alerts` y llama al **`AlertsGateway`**.
-8.  El **`AlertsGateway`** emite dos eventos por WebSocket:
-    * Un `newAlert` con los datos de la alerta de temperatura.
-    * Un `nodeUpdate` con el estado completo del nodo, que ahora tiene `status: 'alerta'`.
-9.  El **Frontend** (React) recibe ambos eventos y actualiza la tabla de alertas y el color del marcador en el mapa, todo instantáneamente.
+1.  Un **Nodo Sensor** envía una petición `POST /ingest` a la API.
+2.  El **`IngestService`** recibe los datos y llama al **`NodesRepository`** para guardar la lectura en Firestore.
+3.  La lógica en **`IngestService`** detecta que `temperatura` es `> 65°C`.
+4.  Llama al **`AlertsService`**, que guarda la alerta en la colección `alerts` y llama al **`AlertsGateway`**.
+5.  El **`AlertsGateway`** emite dos eventos por WebSocket: un `newAlert` y un `nodeUpdate`.
+6.  El **Frontend** (React) recibe ambos eventos y actualiza la tabla de alertas y el color del marcador en el mapa, todo instantáneamente.

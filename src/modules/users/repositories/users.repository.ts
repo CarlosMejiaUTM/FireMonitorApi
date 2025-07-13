@@ -4,4 +4,6 @@ import { User, UserRole } from '../entities/user.entity';
 export abstract class UsersRepository {
   abstract create(createUserDto: CreateUserDto, role: UserRole): Promise<Omit<User, 'contrasena'>>;
   abstract findByUsername(usuario: string): Promise<User | null>;
+  abstract findByEmail(correo: string): Promise<User | null>;
+  abstract findAll(): Promise<Omit<User, 'contrasena'>[]>;
 }

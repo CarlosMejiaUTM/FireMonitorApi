@@ -19,7 +19,6 @@ export class FirestoreUsersRepository implements UsersRepository, OnModuleInit {
   async create(createUserDto: CreateUserDto, role: UserRole): Promise<Omit<User, 'contrasena'>> {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(createUserDto.contrasena, salt);
-
     const newUser = {
       nombre: createUserDto.nombre,
       apellido: createUserDto.apellido,
@@ -28,9 +27,7 @@ export class FirestoreUsersRepository implements UsersRepository, OnModuleInit {
       contrasena: hashedPassword,
       role,
     };
-    
     const docRef = await this._usersCollection.add(newUser);
-    
     const { contrasena, ...userWithoutPassword } = newUser;
     return { id: docRef.id, ...userWithoutPassword };
   }
@@ -40,5 +37,25 @@ export class FirestoreUsersRepository implements UsersRepository, OnModuleInit {
     if (snapshot.empty) return null;
     const doc = snapshot.docs[0];
     return { id: doc.id, ...doc.data() } as User;
+  }
+
+  async findByEmail(correo: string): Promise<User | null> {
+    const snapshot = await this._usersCollection.where('correo', '==', correo).limit(1).get();
+    if (snapshot.empty) return null;
+    const doc = snapshot.docs[0];
+    return { id: doc.id, ...doc.data() } as User;
+  }
+
+  async findAll(): Promise<Omit<User, 'contrasena'>[]> {
+    const snapshot = await this._usersCollection.get();
+    if (snapshot.empty) {
+      return [];
+    }
+    const users: Omit<User, 'contrasena'>[] = [];
+    snapshot.forEach(doc => {
+      const { contrasena, ...userWithoutPassword } = doc.data();
+      users.push({ id: doc.id, ...userWithoutPassword } as Omit<User, 'contrasena'>);
+    });
+    return users;
   }
 }

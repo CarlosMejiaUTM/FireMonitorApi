@@ -19,11 +19,16 @@ export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit
     return { id: doc.id, ...doc.data() };
   }
 
-  async findAll(filters: { tipo?: string; desde?: string; hasta?: string; page?: number; limit?: number }) {
+  async findAll(filters: { tipo?: string; desde?: string; hasta?: string; page?: number; limit?: number; userId?: string }) {
     const { page = 1, limit = 10 } = filters;
+    
     let query: Query<DocumentData> = this._alertsCollection;
     let countQuery: Query<DocumentData> = this._alertsCollection;
 
+    if (filters.userId) {
+      query = query.where('userId', '==', filters.userId);
+      countQuery = countQuery.where('userId', '==', filters.userId);
+    }
     if (filters.tipo) {
       query = query.where('tipo', '==', filters.tipo);
       countQuery = countQuery.where('tipo', '==', filters.tipo);

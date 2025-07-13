@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { User, UserRole } from 'src/modules/users/entities/user.entity';
 import { AlertsGateway } from '../gateways/alerts.gateway';
 import { AlertsRepository } from '../repositories/alerts.repository';
+import { QueryAlertsDto } from '../dto/query-alerts.dto';
 
 @Injectable()
 export class AlertsService {
@@ -10,18 +12,18 @@ export class AlertsService {
   ) {}
 
   async createAlert(alertData: any) {
-    console.log('Guardando nueva alerta en la BD:', alertData);
-    
-    // Ahora sí guardamos la alerta en Firestore usando el repositorio.
     const savedAlert = await this.alertsRepository.create(alertData);
-
-    // Usamos la alerta ya guardada (con su ID real) para notificar.
     this.alertsGateway.sendAlertToAll(savedAlert);
-
     return savedAlert;
   }
 
-  async findAll(filters: any) {
-    return this.alertsRepository.findAll(filters);
+  async findAll(filters: QueryAlertsDto, user: User) {
+    const repositoryFilters: any = { ...filters };
+
+    if (user.role !== UserRole.ADMIN) {
+      repositoryFilters.userId = user.id;
+    }
+    
+    return this.alertsRepository.findAll(repositoryFilters);
   }
 }

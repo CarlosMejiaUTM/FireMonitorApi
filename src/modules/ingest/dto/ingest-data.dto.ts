@@ -8,18 +8,27 @@ import {
   IsDateString,
   IsOptional,
 } from 'class-validator';
-import { CoordinatesDto } from 'src/modules/nodes/dto/coordinates.dto'; // <-- Importamos el DTO
 
-// ... (La clase LecturaDto no cambia)
+// Define la estructura del objeto anidado 'lectura'
 class LecturaDto {
-  @IsNumber() temperatura: number;
-  @IsNumber() humedad: number;
-  @IsBoolean() humoDetectado: boolean;
-  @IsBoolean() fuegoDetectado: boolean;
-  @IsNumber() @IsOptional() concentracionGas?: number;
+  @IsNumber()
+  temperatura: number;
+
+  @IsNumber()
+  humedad: number;
+
+  @IsBoolean()
+  humoDetectado: boolean;
+
+  @IsBoolean()
+  fuegoDetectado: boolean;
+
+  @IsNumber()
+  @IsOptional()
+  concentracionGas?: number;
 }
 
-
+// Define el payload principal que envía el sensor
 export class IngestDataDto {
   @IsString()
   @IsNotEmpty()
@@ -29,10 +38,7 @@ export class IngestDataDto {
   @IsNotEmpty()
   timestamp: string;
 
-  @ValidateNested()
-  @Type(() => CoordinatesDto)
-  @IsNotEmpty()
-  coordenadas: CoordinatesDto; // <-- Campo añadido
+  // El campo 'coordenadas' ha sido eliminado de aquí
 
   @ValidateNested()
   @Type(() => LecturaDto)

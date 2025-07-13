@@ -6,16 +6,18 @@ import { AlertsModule } from './modules/alerts/alerts.module';
 import { DatabaseModule } from './common/database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule,
+    MailModule,
+    UsersModule,
+    AuthModule,
     NodesModule,
     IngestModule,
     AlertsModule,
-    AuthModule,
-    UsersModule,
   ],
 })
 export class AppModule {}

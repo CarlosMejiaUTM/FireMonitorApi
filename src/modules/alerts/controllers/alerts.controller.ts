@@ -1,19 +1,17 @@
-import { Controller, Get, Query, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { GetUser } from 'src/common/decorators/get-user.decorator';
+import { User } from 'src/modules/users/entities/user.entity';
 import { AlertsService } from '../services/alerts.service';
+import { QueryAlertsDto } from '../dto/query-alerts.dto';
 
 @Controller('alerts')
+@UseGuards(AuthGuard('jwt'))
 export class AlertsController {
   constructor(private readonly alertsService: AlertsService) {}
 
   @Get()
-  findAll(
-    @Query('tipo') tipo?: string,
-    @Query('desde') desde?: string,
-    @Query('hasta') hasta?: string,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit?: number,
-  ) {
-    const filters = { tipo, desde, hasta, page, limit };
-    return this.alertsService.findAll(filters);
+  findAll(@GetUser() user: User, @Query() filters: QueryAlertsDto) {
+    return this.alertsService.findAll(filters, user);
   }
 }
