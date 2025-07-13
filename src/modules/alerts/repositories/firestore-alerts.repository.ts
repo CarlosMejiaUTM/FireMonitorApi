@@ -19,7 +19,7 @@ export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit
     return { id: doc.id, ...doc.data() };
   }
 
-  async findAll(filters: { tipo?: string; desde?: string; hasta?: string; page?: number; limit?: number; userId?: string }) {
+  async findAll(filters: { tipo?: string; desde?: string; hasta?: string; page?: number; limit?: number; userId?: string; nodeId?: string }) {
     const { page = 1, limit = 10 } = filters;
     
     let query: Query<DocumentData> = this._alertsCollection;
@@ -43,6 +43,13 @@ export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit
       query = query.where('hora', '<=', hastaDate.toISOString());
       countQuery = countQuery.where('hora', '<=', hastaDate.toISOString());
     }
+    // --- LÓGICA DE FILTRADO AÑADIDA ---
+    if (filters.nodeId) {
+      // En Firestore, los objetos anidados se consultan con "notación de punto"
+      query = query.where('nodo.id', '==', filters.nodeId);
+      countQuery = countQuery.where('nodo.id', '==', filters.nodeId);
+    }
+    // ------------------------------------
 
     const totalSnapshot = await countQuery.get();
     const total = totalSnapshot.size;

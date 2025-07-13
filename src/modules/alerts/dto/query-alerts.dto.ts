@@ -16,11 +16,16 @@ export class QueryAlertsDto {
 
   @IsOptional()
   @IsNumber()
-  @Type(() => Number) 
+  @Type(() => Number)
   page?: number;
 
   @IsOptional()
   @IsNumber()
-  @Type(() => Number) 
+  @Type(() => Number)
   limit?: number;
+
+  // --- CAMPO AÑADIDO ---
+  @IsOptional()
+  @IsString()
+  nodeId?: string;
 }
