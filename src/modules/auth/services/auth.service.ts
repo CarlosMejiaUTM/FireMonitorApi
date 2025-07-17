@@ -1,11 +1,14 @@
 import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { UsersRepository } from 'src/modules/users/repositories/users.repository';
 import { CreateUserDto } from 'src/modules/users/dto/create-user.dto';
 import { UserRole } from 'src/modules/users/entities/user.entity';
 import { LoginDto } from '../dto/login.dto';
 import { MailService } from 'src/modules/mail/mail.service';
+import { ForgotPasswordDto } from '../dto/forgot-password.dto';
+import { ResetPasswordDto } from '../dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -48,5 +51,36 @@ export class AuthService {
       };
     }
     throw new UnauthorizedException('Credenciales incorrectas');
+  }
+
+   async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string }> {
+    const user = await this.usersRepository.findByEmail(forgotPasswordDto.correo);
+    if (!user) {
+      // No revelamos si el correo existe o no por seguridad
+      return { message: 'Si el correo está registrado, se ha enviado un enlace de recuperación.' };
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 3600000); // 1 hora de expiración
+
+    await this.usersRepository.saveResetToken(user.id, resetToken, expires);
+    await this.mailService.sendPasswordResetEmail(user.correo, resetToken);
+
+    return { message: 'Si el correo está registrado, se ha enviado un enlace de recuperación.' };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<{ message: string }> {
+    const user = await this.usersRepository.findUserByResetToken(resetPasswordDto.token);
+
+    if (!user || new Date(user['resetPasswordExpires']) < new Date()) {
+      throw new UnauthorizedException('El token de recuperación es inválido o ha expirado.');
+    }
+
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(resetPasswordDto.nuevaContrasena, salt);
+
+    await this.usersRepository.updatePassword(user.id, hashedPassword);
+
+    return { message: 'Contraseña actualizada exitosamente.' };
   }
 }

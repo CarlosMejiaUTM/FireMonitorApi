@@ -9,10 +9,16 @@ export class NodesService {
   constructor(private readonly nodesRepository: NodesRepository) {}
 
   create(createNodeDto: CreateNodeDto, requestingUser: User) {
+    // 1. Verificamos si el que hace la petición es un ADMIN.
     if (requestingUser.role !== UserRole.ADMIN) {
       throw new ForbiddenException('Solo los administradores pueden crear nuevos nodos.');
     }
+
+    // 2. Determinamos el dueño del nodo.
+    // Si el admin especificó un 'userId' en el body, ese es el dueño.
+    // Si no, el dueño es el propio admin que hace la petición.
     const ownerId = createNodeDto.userId || requestingUser.id;
+
     return this.nodesRepository.create(createNodeDto, ownerId);
   }
 

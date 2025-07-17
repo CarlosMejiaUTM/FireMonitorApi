@@ -31,4 +31,23 @@ export class MailService {
     });
     console.log(`✅ Correo de bienvenida enviado a ${user.correo}`);
   }
+
+  async sendPasswordResetEmail(email: string, token: string) {
+    // En producción, la URL del frontend debería venir de una variable de entorno
+    const resetUrl = `http://localhost:5174/reset-password?token=${token}`;
+
+    await this.transporter.sendMail({
+      from: this.configService.get<string>('MAIL_FROM'),
+      to: email,
+      subject: 'Recuperación de Contraseña - FireMonitor',
+      html: `
+        <h1>Recuperación de Contraseña</h1>
+        <p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para continuar:</p>
+        <a href="${resetUrl}" target="_blank">Restablecer mi contraseña</a>
+        <p>Si no solicitaste esto, puedes ignorar este correo.</p>
+        <p>Este enlace expirará en 1 hora.</p>
+      `,
+    });
+    console.log(`✅ Correo de recuperación enviado a ${email}`);
+  }
 }

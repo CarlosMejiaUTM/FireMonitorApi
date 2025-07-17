@@ -1,10 +1,10 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { NodesRepository } from './nodes.repository';
-import { CreateNodeDto } from '../dto/create-node.dto';
+import { CreateNodeDto, CoordinatesDto } from '../dto/create-node.dto';
 import { UpdateNodeDto } from '../dto/update-node.dto';
 import { FirestoreService } from 'src/common/database/firestore.service';
 import { CollectionReference, DocumentData, Query } from 'firebase-admin/firestore';
-import { IngestDataDto, CoordenadasDto } from 'src/modules/ingest/dto/ingest-data.dto';
+import { IngestDataDto } from 'src/modules/ingest/dto/ingest-data.dto';
 
 @Injectable()
 export class FirestoreNodesRepository implements NodesRepository, OnModuleInit {
@@ -16,16 +16,14 @@ export class FirestoreNodesRepository implements NodesRepository, OnModuleInit {
     this._nodesCollection = this.firestore.db.collection('nodes');
   }
 
-  async create(data: CreateNodeDto, userId?: string): Promise<any> {
-    const nodeToSave: any = {
+  async create(data: CreateNodeDto, userId: string): Promise<any> {
+    const nodeToSave = {
       nombre: data.nombre,
       tipo: data.tipo,
       coordenadas: { ...data.coordenadas },
+      userId: userId, // Guardamos el ID del dueño
       createdAt: new Date().toISOString(),
     };
-    if (userId) {
-      nodeToSave.userId = userId;
-    }
     const docRef = await this._nodesCollection.add(nodeToSave);
     const doc = await docRef.get();
     return { id: doc.id, ...doc.data() };
@@ -78,14 +76,10 @@ export class FirestoreNodesRepository implements NodesRepository, OnModuleInit {
   async updateLastReading(nodeId: string, data: IngestDataDto): Promise<void> {
     const nodeRef = this._nodesCollection.doc(nodeId);
     const plainReading = { ...data.lectura };
-
-    // Guardamos la lectura en una subcolección para el historial
     await nodeRef.collection('readings').add({
       ...plainReading,
       timestamp: data.timestamp,
     });
-
-    // Actualizamos solo la última lectura y la fecha en el documento principal
     await nodeRef.update({
       ultimaLectura: plainReading,
       ultimaActualizacion: data.timestamp,
@@ -110,13 +104,9 @@ export class FirestoreNodesRepository implements NodesRepository, OnModuleInit {
     return history;
   }
 
-  // Método corregido para actualizar coordenadas sin error Firestore
-  async updateCoordinates(nodeId: string, coordenadas: CoordenadasDto): Promise<void> {
+  async updateCoordinates(nodeId: string, coordenadas: CoordinatesDto): Promise<void> {
     const nodeRef = this._nodesCollection.doc(nodeId);
-
-    // Convertimos la instancia a objeto plano para evitar error de Firestore
     const plainCoordinates = { ...coordenadas };
-
     await nodeRef.update({
       coordenadas: plainCoordinates,
       ultimaActualizacion: new Date().toISOString(),
