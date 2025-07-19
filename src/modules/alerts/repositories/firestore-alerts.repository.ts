@@ -2,6 +2,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { AlertsRepository } from './alerts.repository';
 import { FirestoreService } from 'src/common/database/firestore.service';
 import { CollectionReference, DocumentData, Query } from 'firebase-admin/firestore';
+import { QueryAlertsDto } from '../dto/query-alerts.dto'; // Importamos el DTO
 
 @Injectable()
 export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit {
@@ -19,52 +20,54 @@ export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit
     return { id: doc.id, ...doc.data() };
   }
 
-  async findAll(filters: { tipo?: string; desde?: string; hasta?: string; page?: number; limit?: number; userId?: string; nodeId?: string }) {
+  // El tipo de 'filters' ahora es el DTO para mayor seguridad
+  async findAll(filters: QueryAlertsDto) {
     const { page = 1, limit = 10 } = filters;
     
     let query: Query<DocumentData> = this._alertsCollection;
-    let countQuery: Query<DocumentData> = this._alertsCollection;
 
+    // --- Aplicando Filtros ---
     if (filters.userId) {
       query = query.where('userId', '==', filters.userId);
-      countQuery = countQuery.where('userId', '==', filters.userId);
     }
     if (filters.tipo) {
       query = query.where('tipo', '==', filters.tipo);
-      countQuery = countQuery.where('tipo', '==', filters.tipo);
     }
     if (filters.desde) {
       query = query.where('hora', '>=', filters.desde);
-      countQuery = countQuery.where('hora', '>=', filters.desde);
     }
     if (filters.hasta) {
       const hastaDate = new Date(filters.hasta);
       hastaDate.setHours(23, 59, 59, 999);
       query = query.where('hora', '<=', hastaDate.toISOString());
-      countQuery = countQuery.where('hora', '<=', hastaDate.toISOString());
     }
-    // --- LÓGICA DE FILTRADO AÑADIDA ---
+    // MEJORA: Filtro por nodeId corregido para usar un campo de nivel superior
     if (filters.nodeId) {
-      // En Firestore, los objetos anidados se consultan con "notación de punto"
-      query = query.where('nodo.id', '==', filters.nodeId);
-      countQuery = countQuery.where('nodo.id', '==', filters.nodeId);
+      query = query.where('nodeId', '==', filters.nodeId);
     }
-    // ------------------------------------
+    
+    // MEJORA: Conteo eficiente usando getCount()
+    const totalSnapshot = await query.count().get();
+    const total = totalSnapshot.data().count;
 
-    const totalSnapshot = await countQuery.get();
-    const total = totalSnapshot.size;
-
-    const paginatedQuery = query.orderBy('hora', 'desc').limit(limit).offset((page - 1) * limit);
-    const dataSnapshot = await paginatedQuery.get();
-
-    if (dataSnapshot.empty) {
+    if (total === 0) {
       return { data: [], total: 0 };
     }
 
-    const alerts: any[] = [];
-    dataSnapshot.forEach(doc => {
-      alerts.push({ id: doc.id, ...doc.data() });
-    });
+    // MEJORA: Ordenamiento dinámico
+    const sortOrder = filters.sort || 'desc'; // Default a 'desc' si no se especifica
+
+    const paginatedQuery = query
+      .orderBy('hora', sortOrder) // Se usa el sortOrder dinámico
+      .limit(limit)
+      .offset((page - 1) * limit);
+      
+    const dataSnapshot = await paginatedQuery.get();
+
+    const alerts = dataSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
 
     return { data: alerts, total };
   }

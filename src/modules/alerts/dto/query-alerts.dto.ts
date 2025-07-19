@@ -1,4 +1,6 @@
-import { IsOptional, IsString, IsNumber } from 'class-validator';
+// src/modules/alerts/dto/query-alerts.dto.ts
+
+import { IsOptional, IsString, IsNumber, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class QueryAlertsDto {
@@ -24,8 +26,16 @@ export class QueryAlertsDto {
   @Type(() => Number)
   limit?: number;
 
-  // --- CAMPO AÑADIDO ---
   @IsOptional()
   @IsString()
   nodeId?: string;
+
+  @IsOptional()
+  @IsEnum(['asc', 'desc'])
+  sort?: 'asc' | 'desc';
+
+  // --- PROPIEDAD QUE FALTA ---
+  @IsOptional()
+  @IsString()
+  userId?: string; // <-- AÑADE ESTA PROPIEDAD
 }
