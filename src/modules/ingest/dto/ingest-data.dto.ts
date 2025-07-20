@@ -1,15 +1,13 @@
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsNotEmpty,
   IsNumber,
-  IsString,
-  IsBoolean,
   ValidateNested,
-  IsDateString,
-  IsOptional,
 } from 'class-validator';
 
-export class LecturaDto {
+// DTO para el objeto anidado "lectura"
+class LecturaDto {
   @IsNumber()
   temperatura: number;
 
@@ -23,11 +21,11 @@ export class LecturaDto {
   fuegoDetectado: boolean;
 
   @IsNumber()
-  @IsOptional()
-  concentracionGas?: number;
+  concentracionGas: number;
 }
 
-export class CoordenadasDto {  // <-- aquí exportar la clase
+// DTO para el objeto anidado "coordenadas"
+class CoordenadasDto {
   @IsNumber()
   lat: number;
 
@@ -35,22 +33,19 @@ export class CoordenadasDto {  // <-- aquí exportar la clase
   lng: number;
 }
 
+// DTO principal
 export class IngestDataDto {
-  @IsString()
+  // ✅ TIMESTAMP AUTOMÁTICO
+  timestamp: Date = new Date();
+
   @IsNotEmpty()
   nodeId: string;
 
-  @IsDateString()
-  @IsNotEmpty()
-  timestamp: string;
-
-  @ValidateNested()
-  @Type(() => LecturaDto)
-  @IsNotEmpty()
+  @ValidateNested() // Le dice a NestJS que valide también el objeto anidado
+  @Type(() => LecturaDto) // Necesario para la transformación del objeto
   lectura: LecturaDto;
 
   @ValidateNested()
   @Type(() => CoordenadasDto)
-  @IsNotEmpty()
   coordenadas: CoordenadasDto;
 }
