@@ -4,23 +4,34 @@ import { FirestoreService } from 'src/common/database/firestore.service';
 import { CollectionReference, DocumentData, Query, QueryDocumentSnapshot, FirestoreDataConverter } from 'firebase-admin/firestore';
 import { QueryAlertsDto } from '../dto/query-alerts.dto';
 
-
+// ==================================================================
+// 1. DEFINIR EL CONVERTER
+// ==================================================================
 const alertsConverter: FirestoreDataConverter<any> = {
-
+  /**
+   * toFirestore: Se ejecuta ANTES de guardar un documento.
+   */
   toFirestore(alert: any): DocumentData {
-
+    // Pasa el objeto Date directamente. El SDK lo convierte a Timestamp.
     return alert;
   },
 
-
+  /**
+   * fromFirestore: Se ejecuta DESPUÉS de leer un documento.
+   */
   fromFirestore(snapshot: QueryDocumentSnapshot): any {
     const data = snapshot.data();
+
+    // ✅ CORRECCIÓN: Hacemos el código robusto contra datos viejos.
+    // Verificamos si 'data.hora' es un Timestamp de Firestore antes de convertirlo.
+    const hora = (data.hora && typeof data.hora.toDate === 'function') 
+      ? data.hora.toDate() // Si es un Timestamp, lo convertimos a Date
+      : new Date();      // Si no (es un string viejo), usamos una fecha por defecto para evitar que se caiga.
+
     return {
       id: snapshot.id,
       ...data,
-      // Convierte el Timestamp de Firestore a un objeto Date de JS
-      // para que el resto de la aplicación pueda usarlo.
-      hora: data.hora.toDate() 
+      hora: hora, // Usamos la fecha convertida de forma segura.
     };
   }
 };
@@ -28,23 +39,24 @@ const alertsConverter: FirestoreDataConverter<any> = {
 
 @Injectable()
 export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit {
-  // La colección ahora estará fuertemente tipada con el converter
   private _alertsCollection: CollectionReference<any>;
 
   constructor(private readonly firestore: FirestoreService) {}
 
   onModuleInit() {
-
+    // ==================================================================
+    // 2. ADJUNTAR EL CONVERTER A LA COLECCIÓN
+    // ==================================================================
     this._alertsCollection = this.firestore.db
       .collection('alerts')
-      .withConverter(alertsConverter); // <-- ¡Esta es la clave!
+      .withConverter(alertsConverter);
   }
 
   async create(alertData: any): Promise<any> {
-    // Ahora 'create' usará automáticamente el método 'toFirestore' del converter
     const docRef = await this._alertsCollection.add(alertData);
-    // Y '.get()' usará automáticamente el método 'fromFirestore'
-    return await docRef.get();
+    const doc = await docRef.get();
+    // El converter ya transforma el resultado, así que solo lo devolvemos
+    return doc.data();
   }
 
   async findAll(filters: QueryAlertsDto) {
@@ -60,7 +72,6 @@ export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit
       query = query.where('tipo', '==', filters.tipo);
     }
     
-    // La lógica de fechas sigue siendo necesaria para la consulta
     if (filters.desde) {
       query = query.where('hora', '>=', new Date(filters.desde));
     }
@@ -89,8 +100,8 @@ export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit
       .offset((page - 1) * limit);
       
     const dataSnapshot = await paginatedQuery.get();
-
-    // Gracias al converter, ya no necesitas el .map() para transformar los datos
+    
+    // Gracias al converter, ya no necesitas el .map()
     const alerts = dataSnapshot.docs.map(doc => doc.data());
 
     return { data: alerts, total };
