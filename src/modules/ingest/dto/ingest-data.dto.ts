@@ -1,12 +1,16 @@
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
+  IsDate,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   ValidateNested,
 } from 'class-validator';
 
-// DTO para el objeto anidado "lectura"
+/**
+ * DTO para el objeto anidado "lectura"
+ */
 class LecturaDto {
   @IsNumber()
   temperatura: number;
@@ -24,7 +28,9 @@ class LecturaDto {
   concentracionGas: number;
 }
 
-// DTO para el objeto anidado "coordenadas"
+/**
+ * DTO para el objeto anidado "coordenadas"
+ */
 class CoordenadasDto {
   @IsNumber()
   lat: number;
@@ -33,16 +39,20 @@ class CoordenadasDto {
   lng: number;
 }
 
-// DTO principal
+/**
+ * DTO principal que recibe el controlador.
+ * Genera el timestamp automáticamente y valida toda la estructura.
+ */
 export class IngestDataDto {
-  // ✅ TIMESTAMP AUTOMÁTICO
+  @IsOptional()
+  @IsDate()
   timestamp: Date = new Date();
 
   @IsNotEmpty()
   nodeId: string;
 
-  @ValidateNested() // Le dice a NestJS que valide también el objeto anidado
-  @Type(() => LecturaDto) // Necesario para la transformación del objeto
+  @ValidateNested()
+  @Type(() => LecturaDto)
   lectura: LecturaDto;
 
   @ValidateNested()
