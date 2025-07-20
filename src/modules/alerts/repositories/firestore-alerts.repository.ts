@@ -2,7 +2,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { AlertsRepository } from './alerts.repository';
 import { FirestoreService } from 'src/common/database/firestore.service';
 import { CollectionReference, DocumentData, Query } from 'firebase-admin/firestore';
-import { QueryAlertsDto } from '../dto/query-alerts.dto'; // Importamos el DTO
+import { QueryAlertsDto } from '../dto/query-alerts.dto';
 
 @Injectable()
 export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit {
@@ -14,13 +14,14 @@ export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit
     this._alertsCollection = this.firestore.db.collection('alerts');
   }
 
+  // Este método ya estaba correcto, se mantiene igual.
   async create(alertData: any): Promise<any> {
     const docRef = await this._alertsCollection.add(alertData);
     const doc = await docRef.get();
     return { id: doc.id, ...doc.data() };
   }
 
-  // El tipo de 'filters' ahora es el DTO para mayor seguridad
+  // Se corrige la lógica de los filtros de fecha en este método.
   async findAll(filters: QueryAlertsDto) {
     const { page = 1, limit = 10 } = filters;
     
@@ -33,20 +34,24 @@ export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit
     if (filters.tipo) {
       query = query.where('tipo', '==', filters.tipo);
     }
+
+    // ✅ CORRECCIÓN: Convertir los strings de fecha a objetos Date para la consulta
     if (filters.desde) {
-      query = query.where('hora', '>=', filters.desde);
+      query = query.where('hora', '>=', new Date(filters.desde));
     }
     if (filters.hasta) {
       const hastaDate = new Date(filters.hasta);
+      // Aseguramos que el filtro incluya todo el día hasta el último milisegundo
       hastaDate.setHours(23, 59, 59, 999);
-      query = query.where('hora', '<=', hastaDate.toISOString());
-    }
-    // MEJORA: Filtro por nodeId corregido para usar un campo de nivel superior
-    if (filters.nodeId) {
-      query = query.where('nodeId', '==', filters.nodeId);
+      query = query.where('hora', '<=', hastaDate);
     }
     
-    // MEJORA: Conteo eficiente usando getCount()
+    if (filters.nodeId) {
+      // Asumiendo que nodeId está en el objeto 'nodo'
+      query = query.where('nodo.id', '==', filters.nodeId);
+    }
+    
+    // Conteo eficiente sobre la consulta ya filtrada
     const totalSnapshot = await query.count().get();
     const total = totalSnapshot.data().count;
 
@@ -54,11 +59,11 @@ export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit
       return { data: [], total: 0 };
     }
 
-    // MEJORA: Ordenamiento dinámico
-    const sortOrder = filters.sort || 'desc'; // Default a 'desc' si no se especifica
+    // Ordenamiento y paginación
+    const sortOrder = filters.sort || 'desc';
 
     const paginatedQuery = query
-      .orderBy('hora', sortOrder) // Se usa el sortOrder dinámico
+      .orderBy('hora', sortOrder)
       .limit(limit)
       .offset((page - 1) * limit);
       
