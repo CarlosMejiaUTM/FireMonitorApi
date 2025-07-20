@@ -87,7 +87,6 @@ export class FirestoreNodesRepository implements NodesRepository, OnModuleInit {
     return snapshot.docs.map(doc => doc.data());
   }
 
-  // ✅ MÉTODO RESTAURADO
   async findAllByUserId(userId: string): Promise<any[]> {
     const snapshot = await this._nodesCollection.where('userId', '==', userId).get();
     if (snapshot.empty) return [];
@@ -112,6 +111,15 @@ export class FirestoreNodesRepository implements NodesRepository, OnModuleInit {
     await this._nodesCollection.doc(id).delete();
   }
 
+  // ✅ MÉTODO AÑADIDO PARA SOLUCIONAR EL ERROR
+  async assignUser(nodeId: string, userId: string): Promise<void> {
+    const nodeRef = this._nodesCollection.doc(nodeId);
+    await nodeRef.update({
+      userId: userId,
+      ultimaActualizacion: new Date(), // Actualizamos la fecha para saber cuándo se asignó
+    });
+  }
+
   async updateLastReading(nodeId: string, data: IngestDataDto): Promise<void> {
     const nodeRef = this._nodesCollection.doc(nodeId);
     // Aplicamos el converter a la subcolección
@@ -131,7 +139,6 @@ export class FirestoreNodesRepository implements NodesRepository, OnModuleInit {
     });
   }
   
-  // ✅ MÉTODO RESTAURADO Y CORREGIDO
   async updateTimestamp(nodeId: string): Promise<void> {
     const nodeRef = this._nodesCollection.doc(nodeId);
     await nodeRef.update({

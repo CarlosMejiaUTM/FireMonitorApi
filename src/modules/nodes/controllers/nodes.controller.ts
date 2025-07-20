@@ -6,6 +6,8 @@ import { UpdateNodeDto } from '../dto/update-node.dto';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { User, UserRole } from 'src/modules/users/entities/user.entity';
 import { QueryNodesDto } from '../dto/query-nodes.dto';
+// ✅ NO OLVIDES IMPORTAR EL NUEVO DTO
+import { AssignNodeDto } from '../dto/assign-node.dto';
 
 @Controller('nodes')
 @UseGuards(AuthGuard('jwt'))
@@ -21,6 +23,17 @@ export class NodesController {
   @HttpCode(HttpStatus.OK)
   handleHeartbeat(@Body('nodeId') nodeId: string, @GetUser() user: User) {
     return this.nodesService.handleHeartbeat(nodeId, user);
+  }
+
+  // ✅ NUEVO ENDPOINT PARA LA ASIGNACIÓN
+  @Patch(':id/assign')
+  @HttpCode(HttpStatus.OK) // Devolvemos 200 OK si la asignación es exitosa
+  assignNode(
+    @Param('id') nodeId: string,
+    @Body() assignNodeDto: AssignNodeDto,
+  ) {
+    // No necesitamos pasar el usuario aquí a menos que queramos validar permisos específicos para esta acción
+    return this.nodesService.assignUserToNode(nodeId, assignNodeDto.userId);
   }
 
   @Get()
