@@ -1,11 +1,17 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { AlertsRepository } from './alerts.repository';
 import { FirestoreService } from 'src/common/database/firestore.service';
-import { CollectionReference, DocumentData, Query } from 'firebase-admin/firestore';
+import {
+  CollectionReference,
+  DocumentData,
+  Query,
+} from 'firebase-admin/firestore';
 import { QueryAlertsDto } from '../dto/query-alerts.dto'; // Importamos el DTO
 
 @Injectable()
-export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit {
+export class FirestoreAlertsRepository
+  implements AlertsRepository, OnModuleInit
+{
   private _alertsCollection: CollectionReference<DocumentData>;
 
   constructor(private readonly firestore: FirestoreService) {}
@@ -23,7 +29,7 @@ export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit
   // El tipo de 'filters' ahora es el DTO para mayor seguridad
   async findAll(filters: QueryAlertsDto) {
     const { page = 1, limit = 10 } = filters;
-    
+
     let query: Query<DocumentData> = this._alertsCollection;
 
     // --- Aplicando Filtros ---
@@ -45,7 +51,7 @@ export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit
     if (filters.nodeId) {
       query = query.where('nodeId', '==', filters.nodeId);
     }
-    
+
     // MEJORA: Conteo eficiente usando getCount()
     const totalSnapshot = await query.count().get();
     const total = totalSnapshot.data().count;
@@ -61,10 +67,10 @@ export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit
       .orderBy('hora', sortOrder) // Se usa el sortOrder dinámico
       .limit(limit)
       .offset((page - 1) * limit);
-      
+
     const dataSnapshot = await paginatedQuery.get();
 
-    const alerts = dataSnapshot.docs.map(doc => ({
+    const alerts = dataSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     }));

@@ -23,7 +23,7 @@ export class AlertsService {
     if (user.role !== UserRole.ADMIN) {
       repositoryFilters.userId = user.id;
     }
-    
+
     return this.alertsRepository.findAll(repositoryFilters);
   }
 }

@@ -16,8 +16,12 @@ export class IngestService {
   async processData(data: IngestDataDto): Promise<void> {
     const node = await this.nodesRepository.findById(data.nodeId);
     if (!node) {
-      console.error(`Error: Nodo con ID "${data.nodeId}" no encontrado al intentar ingestar datos.`);
-      throw new NotFoundException(`Nodo con ID "${data.nodeId}" no encontrado.`);
+      console.error(
+        `Error: Nodo con ID "${data.nodeId}" no encontrado al intentar ingestar datos.`,
+      );
+      throw new NotFoundException(
+        `Nodo con ID "${data.nodeId}" no encontrado.`,
+      );
     }
 
     // Guardar lectura en historial
@@ -37,7 +41,8 @@ export class IngestService {
   }
 
   private checkForAlerts(node: any, data: IngestDataDto) {
-    const { temperatura, fuegoDetectado, humoDetectado, concentracionGas } = data.lectura;
+    const { temperatura, fuegoDetectado, humoDetectado, concentracionGas } =
+      data.lectura;
 
     const alertPayload = {
       hora: data.timestamp,
@@ -47,13 +52,29 @@ export class IngestService {
     };
 
     if (fuegoDetectado) {
-      this.alertsService.createAlert({ ...alertPayload, tipo: 'Fuego Detectado', severidad: 'Critica' });
+      this.alertsService.createAlert({
+        ...alertPayload,
+        tipo: 'Fuego Detectado',
+        severidad: 'Critica',
+      });
     } else if (humoDetectado) {
-      this.alertsService.createAlert({ ...alertPayload, tipo: 'Humo Detectado', severidad: 'Alta' });
+      this.alertsService.createAlert({
+        ...alertPayload,
+        tipo: 'Humo Detectado',
+        severidad: 'Alta',
+      });
     } else if (concentracionGas && concentracionGas > 300) {
-      this.alertsService.createAlert({ ...alertPayload, tipo: 'Concentración de Gas Elevada', severidad: 'Alta' });
+      this.alertsService.createAlert({
+        ...alertPayload,
+        tipo: 'Concentración de Gas Elevada',
+        severidad: 'Alta',
+      });
     } else if (temperatura > 65) {
-      this.alertsService.createAlert({ ...alertPayload, tipo: 'Temperatura Elevada', severidad: 'Media' });
+      this.alertsService.createAlert({
+        ...alertPayload,
+        tipo: 'Temperatura Elevada',
+        severidad: 'Media',
+      });
     }
   }
 }

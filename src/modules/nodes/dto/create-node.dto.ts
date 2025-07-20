@@ -1,4 +1,11 @@
-import { IsString, IsNotEmpty, IsEnum, ValidateNested, IsOptional, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsEnum,
+  ValidateNested,
+  IsOptional,
+  IsNumber,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 // Definimos las coordenadas en su propia clase para reutilizarla

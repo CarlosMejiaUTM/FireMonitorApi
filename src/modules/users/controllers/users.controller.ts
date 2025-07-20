@@ -12,7 +12,9 @@ export class UsersController {
   @Get()
   findAll(@GetUser() user: User) {
     if (user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException('No tienes permiso para acceder a esta lista.');
+      throw new ForbiddenException(
+        'No tienes permiso para acceder a esta lista.',
+      );
     }
     return this.usersService.findAll();
   }

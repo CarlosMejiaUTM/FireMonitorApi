@@ -3,7 +3,11 @@ import { NodesRepository } from './nodes.repository';
 import { CreateNodeDto, CoordinatesDto } from '../dto/create-node.dto';
 import { UpdateNodeDto } from '../dto/update-node.dto';
 import { FirestoreService } from 'src/common/database/firestore.service';
-import { CollectionReference, DocumentData, Query } from 'firebase-admin/firestore';
+import {
+  CollectionReference,
+  DocumentData,
+  Query,
+} from 'firebase-admin/firestore';
 import { IngestDataDto } from 'src/modules/ingest/dto/ingest-data.dto';
 
 @Injectable()
@@ -29,7 +33,9 @@ export class FirestoreNodesRepository implements NodesRepository, OnModuleInit {
     return { id: doc.id, ...doc.data() };
   }
 
-  async findAll(filters: { tipo?: string; userId?: string } = {}): Promise<any[]> {
+  async findAll(
+    filters: { tipo?: string; userId?: string } = {},
+  ): Promise<any[]> {
     let query: Query<DocumentData> = this._nodesCollection;
     if (filters.tipo) {
       query = query.where('tipo', '==', filters.tipo);
@@ -40,17 +46,19 @@ export class FirestoreNodesRepository implements NodesRepository, OnModuleInit {
     const snapshot = await query.get();
     if (snapshot.empty) return [];
     const nodes: any[] = [];
-    snapshot.forEach(doc => {
+    snapshot.forEach((doc) => {
       nodes.push({ id: doc.id, ...doc.data() });
     });
     return nodes;
   }
 
   async findAllByUserId(userId: string): Promise<any[]> {
-    const snapshot = await this._nodesCollection.where('userId', '==', userId).get();
+    const snapshot = await this._nodesCollection
+      .where('userId', '==', userId)
+      .get();
     if (snapshot.empty) return [];
     const nodes: any[] = [];
-    snapshot.forEach(doc => {
+    snapshot.forEach((doc) => {
       nodes.push({ id: doc.id, ...doc.data() });
     });
     return nodes;
@@ -95,16 +103,22 @@ export class FirestoreNodesRepository implements NodesRepository, OnModuleInit {
 
   async findHistoryById(nodeId: string): Promise<any[]> {
     const historyRef = this._nodesCollection.doc(nodeId).collection('readings');
-    const snapshot = await historyRef.orderBy('timestamp', 'desc').limit(20).get();
+    const snapshot = await historyRef
+      .orderBy('timestamp', 'desc')
+      .limit(20)
+      .get();
     if (snapshot.empty) return [];
     const history: any[] = [];
-    snapshot.forEach(doc => {
+    snapshot.forEach((doc) => {
       history.push({ id: doc.id, ...doc.data() });
     });
     return history;
   }
 
-  async updateCoordinates(nodeId: string, coordenadas: CoordinatesDto): Promise<void> {
+  async updateCoordinates(
+    nodeId: string,
+    coordenadas: CoordinatesDto,
+  ): Promise<void> {
     const nodeRef = this._nodesCollection.doc(nodeId);
     const plainCoordinates = { ...coordenadas };
     await nodeRef.update({

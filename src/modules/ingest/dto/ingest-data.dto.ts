@@ -27,7 +27,8 @@ export class LecturaDto {
   concentracionGas?: number;
 }
 
-export class CoordenadasDto {  // <-- aquí exportar la clase
+export class CoordenadasDto {
+  // <-- aquí exportar la clase
   @IsNumber()
   lat: number;
 

@@ -13,7 +13,9 @@ export class FirestoreService implements OnModuleInit {
   constructor(private configService: ConfigService) {}
 
   onModuleInit() {
-    const base64Credentials = this.configService.get<string>('GCP_CREDENTIALS_BASE64');
+    const base64Credentials = this.configService.get<string>(
+      'GCP_CREDENTIALS_BASE64',
+    );
 
     if (!base64Credentials) {
       throw new InternalServerErrorException(
@@ -22,7 +24,9 @@ export class FirestoreService implements OnModuleInit {
     }
 
     // Decodificamos la cadena base64 a JSON
-    const serviceAccount = JSON.parse(Buffer.from(base64Credentials, 'base64').toString('utf8'));
+    const serviceAccount = JSON.parse(
+      Buffer.from(base64Credentials, 'base64').toString('utf8'),
+    ) as admin.ServiceAccount;
 
     if (!admin.apps.length) {
       admin.initializeApp({
