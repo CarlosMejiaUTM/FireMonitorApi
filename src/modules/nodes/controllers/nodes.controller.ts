@@ -6,7 +6,6 @@ import { UpdateNodeDto } from '../dto/update-node.dto';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { User, UserRole } from 'src/modules/users/entities/user.entity';
 import { QueryNodesDto } from '../dto/query-nodes.dto';
-// ✅ NO OLVIDES IMPORTAR EL NUEVO DTO
 import { AssignNodeDto } from '../dto/assign-node.dto';
 
 @Controller('nodes')
