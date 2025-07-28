@@ -1,10 +1,11 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { CollectionReference, DocumentData } from 'firebase-admin/firestore';
 import { FirestoreService } from 'src/common/database/firestore.service';
 import { UsersRepository } from './users.repository';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { User, UserRole } from '../entities/user.entity';
+import { UpdateUserDto } from '../dto/update-user.dto';
 
 @Injectable()
 export class FirestoreUsersRepository implements UsersRepository, OnModuleInit {
@@ -49,7 +50,6 @@ export class FirestoreUsersRepository implements UsersRepository, OnModuleInit {
     return { id: doc.id, ...doc.data() } as User;
   }
 
-  // --- MÉTODO AÑADIDO ---
   async findAll(): Promise<Omit<User, 'contrasena'>[]> {
     const snapshot = await this._usersCollection.get();
     if (snapshot.empty) {
@@ -57,7 +57,6 @@ export class FirestoreUsersRepository implements UsersRepository, OnModuleInit {
     }
     const users: Omit<User, 'contrasena'>[] = [];
     snapshot.forEach(doc => {
-      // Excluimos la contraseña de la respuesta por seguridad
       const { contrasena, ...userWithoutPassword } = doc.data();
       users.push({ id: doc.id, ...userWithoutPassword } as Omit<User, 'contrasena'>);
     });
@@ -86,5 +85,24 @@ export class FirestoreUsersRepository implements UsersRepository, OnModuleInit {
       resetPasswordToken: null,
       resetPasswordExpires: null,
     });
+  }
+
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<Omit<User, 'contrasena'>> {
+    const userRef = this._usersCollection.doc(id);
+
+    const doc = await userRef.get();
+    if (!doc.exists) {
+      throw new NotFoundException(`User with ID "${id}" not found.`);
+    }
+    
+    const updateData = { ...updateUserDto };
+    await userRef.update(updateData);
+
+    const updatedDoc = await userRef.get();
+    const updatedUserData = updatedDoc.data() as User; 
+
+    const { id: _, contrasena, ...userWithoutPassword } = updatedUserData;
+    
+    return { id: updatedDoc.id, ...userWithoutPassword };
   }
 }

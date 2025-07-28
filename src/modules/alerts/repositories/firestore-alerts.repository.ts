@@ -4,13 +4,9 @@ import { FirestoreService } from 'src/common/database/firestore.service';
 import { CollectionReference, DocumentData, Query, QueryDocumentSnapshot, FirestoreDataConverter } from 'firebase-admin/firestore';
 import { QueryAlertsDto } from '../dto/query-alerts.dto';
 
-// ==================================================================
-// 1. DEFINIR EL CONVERTER
-// ==================================================================
+
 const alertsConverter: FirestoreDataConverter<any> = {
-  /**
-   * toFirestore: Se ejecuta ANTES de guardar un documento.
-   */
+
   toFirestore(alert: any): DocumentData {
     // Pasa el objeto Date directamente. El SDK lo convierte a Timestamp.
     return alert;

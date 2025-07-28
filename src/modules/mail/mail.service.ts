@@ -34,7 +34,7 @@ export class MailService {
 
   async sendPasswordResetEmail(email: string, token: string) {
     // En producción, la URL del frontend debería venir de una variable de entorno
-    const resetUrl = `https://firemonitorapi.onrender.com/reset-password?token=${token}`;
+    const resetUrl = `https://carlosmejiautm.github.io/firemonitor/reset-password?token=${token}`;
 
     await this.transporter.sendMail({
       from: this.configService.get<string>('MAIL_FROM'),
