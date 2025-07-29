@@ -21,4 +21,5 @@ export abstract class UsersRepository {
     userId: string,
     newHashedPassword: string,
   ): Promise<void>;
+  abstract updateToken(userId: string, token:string): Promise<void>;
 }

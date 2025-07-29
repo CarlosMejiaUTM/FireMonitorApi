@@ -10,5 +10,6 @@ export class User {
   usuario: string;
   correo: string;
   contrasena: string;
+  token: string;
   role: UserRole;
 }

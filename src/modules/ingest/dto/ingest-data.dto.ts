@@ -24,7 +24,7 @@ export class LecturaDto {
 
   @IsNumber()
   @IsOptional()
-  concentracionGas?: number;
+  concentracionGas: number;
 }
 
 export class CoordenadasDto {

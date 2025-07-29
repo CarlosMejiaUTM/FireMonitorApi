@@ -33,14 +33,14 @@ export class IngestService {
     // Obtener nodo actualizado para alertas y notificaciones
     const updatedNode = await this.nodesRepository.findById(data.nodeId);
 
-    this.checkForAlerts(updatedNode, data);
+    await this.checkForAlerts(updatedNode, data);
 
     const nodesService = new NodesService(this.nodesRepository);
     const status = nodesService['calculateNodeStatus'](updatedNode);
     this.eventsGateway.sendNodeUpdate({ ...updatedNode, status });
   }
 
-  private checkForAlerts(node: any, data: IngestDataDto) {
+  private async checkForAlerts(node: any, data: IngestDataDto) {
     const { temperatura, fuegoDetectado, humoDetectado, concentracionGas } =
       data.lectura;
 
@@ -51,26 +51,26 @@ export class IngestService {
       userId: node.userId,
     };
 
-    if (fuegoDetectado) {
-      this.alertsService.createAlert({
-        ...alertPayload,
-        tipo: 'Fuego Detectado',
-        severidad: 'Critica',
-      });
-    } else if (humoDetectado) {
-      this.alertsService.createAlert({
+    if (humoDetectado) {
+      await this.alertsService.createAlert({
         ...alertPayload,
         tipo: 'Humo Detectado',
         severidad: 'Alta',
       });
-    } else if (concentracionGas && concentracionGas > 300) {
-      this.alertsService.createAlert({
+    } else if (fuegoDetectado) {
+      await this.alertsService.createAlert({
+        ...alertPayload,
+        tipo: 'Fuego Detectado',
+        severidad: 'Critica',
+      });
+    } else if (concentracionGas && concentracionGas > 200) {
+      await this.alertsService.createAlert({
         ...alertPayload,
         tipo: 'Concentración de Gas Elevada',
         severidad: 'Alta',
       });
     } else if (temperatura > 65) {
-      this.alertsService.createAlert({
+      await this.alertsService.createAlert({
         ...alertPayload,
         tipo: 'Temperatura Elevada',
         severidad: 'Media',

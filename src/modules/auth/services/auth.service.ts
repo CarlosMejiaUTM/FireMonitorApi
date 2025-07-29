@@ -56,9 +56,14 @@ export class AuthService {
     const user = await this.usersRepository.findByUsername(loginDto.usuario);
 
     if (user && (await bcrypt.compare(loginDto.contrasena, user.contrasena))) {
+      if (loginDto.token) {
+        await this.usersRepository.updateToken(user.id, loginDto.token);
+      }
       const payload = { usuario: user.usuario, sub: user.id, role: user.role };
+      const {contrasena, ...userwithoutPassword} = user;
       return {
         access_token: this.jwtService.sign(payload),
+        user: userwithoutPassword,
       };
     }
     throw new UnauthorizedException('Credenciales incorrectas');

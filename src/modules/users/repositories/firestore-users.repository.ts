@@ -5,6 +5,7 @@ import { FirestoreService } from 'src/common/database/firestore.service';
 import { UsersRepository } from './users.repository';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { User, UserRole } from '../entities/user.entity';
+import { credential } from 'firebase-admin';
 
 @Injectable()
 export class FirestoreUsersRepository implements UsersRepository, OnModuleInit {
@@ -30,6 +31,7 @@ export class FirestoreUsersRepository implements UsersRepository, OnModuleInit {
       correo: createUserDto.correo,
       contrasena: hashedPassword,
       role,
+      token: createUserDto.fcmToken
     };
 
     const docRef = await this._usersCollection.add(newUser);
@@ -108,5 +110,11 @@ export class FirestoreUsersRepository implements UsersRepository, OnModuleInit {
       resetPasswordToken: null,
       resetPasswordExpires: null,
     });
+  }
+
+  async updateToken(userId: string, token: string): Promise<void> {
+    const userRef = this._usersCollection.doc(userId);
+    await userRef.update({ token });
+    //console.log('Token FCM actualizado para userId: ${userId}');
   }
 }
