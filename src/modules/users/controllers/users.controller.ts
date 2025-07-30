@@ -1,8 +1,9 @@
-import { Controller, Get, UseGuards, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, UseGuards, ForbiddenException, Patch, Param, Body } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { User, UserRole } from '../entities/user.entity';
 import { UsersService } from '../services/users.service';
+import { UpdateUserDto } from '../dto/update-user.dto'; // <-- 1. Importar el DTO
 
 @Controller('users')
 @UseGuards(AuthGuard('jwt'))

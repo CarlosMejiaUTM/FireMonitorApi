@@ -17,21 +17,25 @@ export class FirestoreAlertsRepository
   constructor(private readonly firestore: FirestoreService) {}
 
   onModuleInit() {
-    this._alertsCollection = this.firestore.db.collection('alerts');
+    // ==================================================================
+    // 2. ADJUNTAR EL CONVERTER A LA COLECCIÓN
+    // ==================================================================
+    this._alertsCollection = this.firestore.db
+      .collection('alerts')
+      .withConverter(alertsConverter);
   }
 
   async create(alertData: any): Promise<any> {
     const docRef = await this._alertsCollection.add(alertData);
     const doc = await docRef.get();
-    return { id: doc.id, ...doc.data() };
+    // El converter ya transforma el resultado, así que solo lo devolvemos
+    return doc.data();
   }
 
-  // El tipo de 'filters' ahora es el DTO para mayor seguridad
   async findAll(filters: QueryAlertsDto) {
     const { page = 1, limit = 10 } = filters;
 
     let query: Query<DocumentData> = this._alertsCollection;
-
     // --- Aplicando Filtros ---
     if (filters.userId) {
       query = query.where('userId', '==', filters.userId);
@@ -39,20 +43,20 @@ export class FirestoreAlertsRepository
     if (filters.tipo) {
       query = query.where('tipo', '==', filters.tipo);
     }
+    
     if (filters.desde) {
-      query = query.where('hora', '>=', filters.desde);
+      query = query.where('hora', '>=', new Date(filters.desde));
     }
     if (filters.hasta) {
       const hastaDate = new Date(filters.hasta);
       hastaDate.setHours(23, 59, 59, 999);
-      query = query.where('hora', '<=', hastaDate.toISOString());
+      query = query.where('hora', '<=', hastaDate);
     }
-    // MEJORA: Filtro por nodeId corregido para usar un campo de nivel superior
+    
     if (filters.nodeId) {
-      query = query.where('nodeId', '==', filters.nodeId);
+      query = query.where('nodo.id', '==', filters.nodeId);
     }
 
-    // MEJORA: Conteo eficiente usando getCount()
     const totalSnapshot = await query.count().get();
     const total = totalSnapshot.data().count;
 
@@ -60,11 +64,10 @@ export class FirestoreAlertsRepository
       return { data: [], total: 0 };
     }
 
-    // MEJORA: Ordenamiento dinámico
-    const sortOrder = filters.sort || 'desc'; // Default a 'desc' si no se especifica
+    const sortOrder = filters.sort || 'desc';
 
     const paginatedQuery = query
-      .orderBy('hora', sortOrder) // Se usa el sortOrder dinámico
+      .orderBy('hora', sortOrder)
       .limit(limit)
       .offset((page - 1) * limit);
 
@@ -74,6 +77,7 @@ export class FirestoreAlertsRepository
       id: doc.id,
       ...doc.data(),
     }));
+
 
     return { data: alerts, total };
   }

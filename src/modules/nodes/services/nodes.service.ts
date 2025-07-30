@@ -86,8 +86,27 @@ export class NodesService {
     return this.nodesRepository.updateTimestamp(nodeId);
   }
 
+  // ✅ NUEVO MÉTODO PARA ASIGNAR UN NODO
+  async assignUserToNode(nodeId: string, userId: string): Promise<void> {
+    // Primero, verificamos que el nodo exista para dar un error claro
+    const node = await this.nodesRepository.findById(nodeId);
+    if (!node) {
+      throw new NotFoundException(`El nodo con ID "${nodeId}" no fue encontrado.`);
+    }
+    
+    // Aquí también podrías verificar si el usuario existe si tienes un `usersRepository`
+    
+    return this.nodesRepository.assignUser(nodeId, userId);
+  }
+
   private calculateNodeStatus(node: any): 'alerta' | 'activo' | 'inactivo' {
     if (!node.ultimaActualizacion) return 'inactivo';
+    
+    // Asegurarnos de que 'ultimaActualizacion' es un objeto Date
+    const lastUpdate = (node.ultimaActualizacion instanceof Date)
+      ? node.ultimaActualizacion
+      : new Date(node.ultimaActualizacion);
+
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
     if (new Date(node.ultimaActualizacion) < thirtyMinutesAgo)
       return 'inactivo';

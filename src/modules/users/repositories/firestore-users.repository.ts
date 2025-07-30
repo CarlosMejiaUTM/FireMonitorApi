@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { CollectionReference, DocumentData } from 'firebase-admin/firestore';
 import { FirestoreService } from 'src/common/database/firestore.service';
@@ -6,6 +6,7 @@ import { UsersRepository } from './users.repository';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { User, UserRole } from '../entities/user.entity';
 import { credential } from 'firebase-admin';
+import { UpdateUserDto } from '../dto/update-user.dto';
 
 @Injectable()
 export class FirestoreUsersRepository implements UsersRepository, OnModuleInit {
@@ -60,7 +61,6 @@ export class FirestoreUsersRepository implements UsersRepository, OnModuleInit {
     return { id: doc.id, ...doc.data() } as User;
   }
 
-  // --- MÉTODO AÑADIDO ---
   async findAll(): Promise<Omit<User, 'contrasena'>[]> {
     const snapshot = await this._usersCollection.get();
     if (snapshot.empty) {

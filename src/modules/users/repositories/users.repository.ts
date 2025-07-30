@@ -1,5 +1,7 @@
+// users.repository.ts
 import { CreateUserDto } from '../dto/create-user.dto';
 import { User, UserRole } from '../entities/user.entity';
+import { UpdateUserDto } from '../dto/update-user.dto'
 
 export abstract class UsersRepository {
   abstract create(
@@ -17,6 +19,7 @@ export abstract class UsersRepository {
     expires: Date,
   ): Promise<void>;
   abstract findUserByResetToken(token: string): Promise<User | null>;
+  
   abstract updatePassword(
     userId: string,
     newHashedPassword: string,

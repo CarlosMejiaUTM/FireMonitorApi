@@ -1,15 +1,17 @@
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
+  IsDate,
   IsNotEmpty,
   IsNumber,
-  IsString,
-  IsBoolean,
-  ValidateNested,
-  IsDateString,
   IsOptional,
+  ValidateNested,
 } from 'class-validator';
 
-export class LecturaDto {
+/**
+ * DTO para el objeto anidado "lectura"
+ */
+class LecturaDto {
   @IsNumber()
   temperatura: number;
 
@@ -27,8 +29,10 @@ export class LecturaDto {
   concentracionGas: number;
 }
 
-export class CoordenadasDto {
-  // <-- aquí exportar la clase
+/**
+ * DTO para el objeto anidado "coordenadas"
+ */
+class CoordenadasDto {
   @IsNumber()
   lat: number;
 
@@ -36,22 +40,23 @@ export class CoordenadasDto {
   lng: number;
 }
 
+/**
+ * DTO principal que recibe el controlador.
+ * Genera el timestamp automáticamente y valida toda la estructura.
+ */
 export class IngestDataDto {
-  @IsString()
+  @IsOptional()
+  @IsDate()
+  timestamp: Date = new Date();
+
   @IsNotEmpty()
   nodeId: string;
 
-  @IsDateString()
-  @IsNotEmpty()
-  timestamp: string;
-
   @ValidateNested()
   @Type(() => LecturaDto)
-  @IsNotEmpty()
   lectura: LecturaDto;
 
   @ValidateNested()
   @Type(() => CoordenadasDto)
-  @IsNotEmpty()
   coordenadas: CoordenadasDto;
 }
