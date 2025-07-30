@@ -13,20 +13,10 @@ export class UsersController {
   @Get()
   findAll(@GetUser() user: User) {
     if (user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException('No tienes permiso para acceder a esta lista.');
+      throw new ForbiddenException(
+        'No tienes permiso para acceder a esta lista.',
+      );
     }
     return this.usersService.findAll();
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string, 
-    @Body() updateUserDto: UpdateUserDto,
-    @GetUser() user: User
-  ) {
-    if (user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException('No tienes permiso para editar usuarios.');
-    }
-    return this.usersService.update(id, updateUserDto);
   }
 }

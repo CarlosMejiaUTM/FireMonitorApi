@@ -16,8 +16,12 @@ export class IngestService {
   async processData(data: IngestDataDto): Promise<void> {
     const node = await this.nodesRepository.findById(data.nodeId);
     if (!node) {
-      console.error(`Error: Nodo con ID "${data.nodeId}" no encontrado al intentar ingestar datos.`);
-      throw new NotFoundException(`Nodo con ID "${data.nodeId}" no encontrado.`);
+      console.error(
+        `Error: Nodo con ID "${data.nodeId}" no encontrado al intentar ingestar datos.`,
+      );
+      throw new NotFoundException(
+        `Nodo con ID "${data.nodeId}" no encontrado.`,
+      );
     }
 
     // Guardar lectura en historial
@@ -29,15 +33,16 @@ export class IngestService {
     // Obtener nodo actualizado para alertas y notificaciones
     const updatedNode = await this.nodesRepository.findById(data.nodeId);
 
-    this.checkForAlerts(updatedNode, data);
+    await this.checkForAlerts(updatedNode, data);
 
     const nodesService = new NodesService(this.nodesRepository);
     const status = nodesService['calculateNodeStatus'](updatedNode);
     this.eventsGateway.sendNodeUpdate({ ...updatedNode, status });
   }
 
-  private checkForAlerts(node: any, data: IngestDataDto) {
-    const { temperatura, fuegoDetectado, humoDetectado, concentracionGas } = data.lectura;
+  private async checkForAlerts(node: any, data: IngestDataDto) {
+    const { temperatura, fuegoDetectado, humoDetectado, concentracionGas } =
+      data.lectura;
 
     const alertPayload = {
       hora: data.timestamp,
@@ -46,14 +51,30 @@ export class IngestService {
       userId: node.userId,
     };
 
-    if (fuegoDetectado) {
-      this.alertsService.createAlert({ ...alertPayload, tipo: 'Fuego Detectado', severidad: 'Critica' });
-    } else if (humoDetectado) {
-      this.alertsService.createAlert({ ...alertPayload, tipo: 'Humo Detectado', severidad: 'Alta' });
-    } else if (concentracionGas && concentracionGas > 300) {
-      this.alertsService.createAlert({ ...alertPayload, tipo: 'Concentración de Gas Elevada', severidad: 'Alta' });
+    if (humoDetectado) {
+      await this.alertsService.createAlert({
+        ...alertPayload,
+        tipo: 'Humo Detectado',
+        severidad: 'Alta',
+      });
+    } else if (fuegoDetectado) {
+      await this.alertsService.createAlert({
+        ...alertPayload,
+        tipo: 'Fuego Detectado',
+        severidad: 'Critica',
+      });
+    } else if (concentracionGas && concentracionGas > 200) {
+      await this.alertsService.createAlert({
+        ...alertPayload,
+        tipo: 'Concentración de Gas Elevada',
+        severidad: 'Alta',
+      });
     } else if (temperatura > 65) {
-      this.alertsService.createAlert({ ...alertPayload, tipo: 'Temperatura Elevada', severidad: 'Media' });
+      await this.alertsService.createAlert({
+        ...alertPayload,
+        tipo: 'Temperatura Elevada',
+        severidad: 'Media',
+      });
     }
   }
 }

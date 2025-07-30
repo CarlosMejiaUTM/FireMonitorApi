@@ -28,7 +28,9 @@ async function createAdminUser() {
   const usersRef = db.collection('users');
 
   // 1. Verificar si el admin ya existe
-  const snapshot = await usersRef.where('usuario', '==', adminData.usuario).get();
+  const snapshot = await usersRef
+    .where('usuario', '==', adminData.usuario)
+    .get();
   if (!snapshot.empty) {
     console.log('✅ El usuario admin ya existe. No se necesita hacer nada.');
     return;

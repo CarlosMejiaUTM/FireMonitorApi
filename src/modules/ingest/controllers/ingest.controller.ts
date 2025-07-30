@@ -1,12 +1,6 @@
 // src/modules/ingest/controllers/ingest.controller.ts
 
-import {
-  Controller,
-  Post,
-  Body,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { IngestService } from '../services/ingest.service';
 import { IngestDataDto } from '../dto/ingest-data.dto';
 

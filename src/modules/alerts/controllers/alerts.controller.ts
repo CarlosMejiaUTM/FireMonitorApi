@@ -9,7 +9,7 @@ import { QueryAlertsDto } from '../dto/query-alerts.dto';
 
 @Controller('alerts')
 @UseGuards(AuthGuard('jwt'))
-export class AlertsController { 
+export class AlertsController {
   constructor(private readonly alertsService: AlertsService) {}
 
   @Get()

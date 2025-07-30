@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Param, UseGuards, HttpCode, HttpStatus, Patch, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  Patch,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { NodesService } from '../services/nodes.service';
 import { CreateNodeDto } from '../dto/create-node.dto';
@@ -42,7 +54,7 @@ export class NodesController {
     }
     return this.nodesService.findAllByUserId(user.id, queryNodesDto.tipo);
   }
-  
+
   @Get(':id/history')
   findHistory(@Param('id') id: string, @GetUser() user: User) {
     return this.nodesService.findHistory(id, user);
@@ -52,9 +64,13 @@ export class NodesController {
   findOne(@Param('id') id: string, @GetUser() user: User) {
     return this.nodesService.findOne(id, user);
   }
-  
+
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateNodeDto: UpdateNodeDto, @GetUser() user: User) {
+  update(
+    @Param('id') id: string,
+    @Body() updateNodeDto: UpdateNodeDto,
+    @GetUser() user: User,
+  ) {
     return this.nodesService.update(id, updateNodeDto, user);
   }
 

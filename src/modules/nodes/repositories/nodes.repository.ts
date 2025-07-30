@@ -4,10 +4,11 @@ import { IngestDataDto } from "src/modules/ingest/dto/ingest-data.dto";
 import { CoordinatesDto } from "../dto/coordinates.dto";
 
 export abstract class NodesRepository {
-  abstract create(data: CreateNodeDto, userId: string): Promise<any>;
-  
-  abstract findAll(filters?: { tipo?: string; userId?: string }): Promise<any[]>;
-
+  abstract create(data: CreateNodeDto, userId?: string): Promise<any>;
+  abstract findAll(filters?: {
+    tipo?: string;
+    userId?: string;
+  }): Promise<any[]>;
   abstract findAllByUserId(userId: string): Promise<any[]>;
   
   abstract findById(id: string): Promise<any | null>;
@@ -15,14 +16,16 @@ export abstract class NodesRepository {
   abstract update(id: string, data: UpdateNodeDto): Promise<any>;
 
   abstract remove(id: string): Promise<void>;
-
-  abstract updateLastReading(nodeId: string, data: IngestDataDto): Promise<void>;
+  abstract updateLastReading(
+    nodeId: string,
+    readingData: IngestDataDto,
+  ): Promise<void>;
 
   abstract updateTimestamp(nodeId: string): Promise<void>;
 
   abstract findHistoryById(nodeId: string): Promise<any[]>;
-
-  abstract updateCoordinates(nodeId: string, coordenadas: CoordinatesDto): Promise<void>;
-
-  abstract assignUser(nodeId: string, userId: string): Promise<void>;
+  abstract updateCoordinates(
+    nodeId: string,
+    coordenadas: { lat: number; lng: number },
+  ): Promise<void>;
 }

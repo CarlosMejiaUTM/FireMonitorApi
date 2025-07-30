@@ -16,6 +16,8 @@ async function bootstrap() {
   );
 
   await app.listen(process.env.PORT || 3000);
-  console.log(`🚀 Aplicación corriendo en: http://localhost:${process.env.PORT || 3000}`);
+  console.log(
+    `🚀 Aplicación corriendo en: http://localhost:${process.env.PORT || 3000}`,
+  );
 }
-bootstrap();
+void bootstrap();

@@ -25,6 +25,7 @@ class LecturaDto {
   fuegoDetectado: boolean;
 
   @IsNumber()
+  @IsOptional()
   concentracionGas: number;
 }
 

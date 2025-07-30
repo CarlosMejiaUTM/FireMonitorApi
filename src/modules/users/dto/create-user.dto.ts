@@ -6,4 +6,5 @@ export class CreateUserDto {
   @IsString() @IsNotEmpty() usuario: string;
   @IsEmail() @IsNotEmpty() correo: string;
   @IsString() @MinLength(6) contrasena: string;
+  @IsString() @IsNotEmpty() fcmToken: string;
 }

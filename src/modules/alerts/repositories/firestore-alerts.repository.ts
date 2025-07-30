@@ -1,41 +1,18 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { AlertsRepository } from './alerts.repository';
 import { FirestoreService } from 'src/common/database/firestore.service';
-import { CollectionReference, DocumentData, Query, QueryDocumentSnapshot, FirestoreDataConverter } from 'firebase-admin/firestore';
-import { QueryAlertsDto } from '../dto/query-alerts.dto';
-
-
-const alertsConverter: FirestoreDataConverter<any> = {
-
-  toFirestore(alert: any): DocumentData {
-    // Pasa el objeto Date directamente. El SDK lo convierte a Timestamp.
-    return alert;
-  },
-
-  /**
-   * fromFirestore: Se ejecuta DESPUÉS de leer un documento.
-   */
-  fromFirestore(snapshot: QueryDocumentSnapshot): any {
-    const data = snapshot.data();
-
-    // ✅ CORRECCIÓN: Hacemos el código robusto contra datos viejos.
-    // Verificamos si 'data.hora' es un Timestamp de Firestore antes de convertirlo.
-    const hora = (data.hora && typeof data.hora.toDate === 'function') 
-      ? data.hora.toDate() // Si es un Timestamp, lo convertimos a Date
-      : new Date();      // Si no (es un string viejo), usamos una fecha por defecto para evitar que se caiga.
-
-    return {
-      id: snapshot.id,
-      ...data,
-      hora: hora, // Usamos la fecha convertida de forma segura.
-    };
-  }
-};
-
+import {
+  CollectionReference,
+  DocumentData,
+  Query,
+} from 'firebase-admin/firestore';
+import { QueryAlertsDto } from '../dto/query-alerts.dto'; // Importamos el DTO
 
 @Injectable()
-export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit {
-  private _alertsCollection: CollectionReference<any>;
+export class FirestoreAlertsRepository
+  implements AlertsRepository, OnModuleInit
+{
+  private _alertsCollection: CollectionReference<DocumentData>;
 
   constructor(private readonly firestore: FirestoreService) {}
 
@@ -57,9 +34,8 @@ export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit
 
   async findAll(filters: QueryAlertsDto) {
     const { page = 1, limit = 10 } = filters;
-    
-    let query: Query<any> = this._alertsCollection;
 
+    let query: Query<DocumentData> = this._alertsCollection;
     // --- Aplicando Filtros ---
     if (filters.userId) {
       query = query.where('userId', '==', filters.userId);
@@ -80,7 +56,7 @@ export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit
     if (filters.nodeId) {
       query = query.where('nodo.id', '==', filters.nodeId);
     }
-    
+
     const totalSnapshot = await query.count().get();
     const total = totalSnapshot.data().count;
 
@@ -94,11 +70,14 @@ export class FirestoreAlertsRepository implements AlertsRepository, OnModuleInit
       .orderBy('hora', sortOrder)
       .limit(limit)
       .offset((page - 1) * limit);
-      
+
     const dataSnapshot = await paginatedQuery.get();
-    
-    // Gracias al converter, ya no necesitas el .map()
-    const alerts = dataSnapshot.docs.map(doc => doc.data());
+
+    const alerts = dataSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
 
     return { data: alerts, total };
   }

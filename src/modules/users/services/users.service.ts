@@ -10,7 +10,6 @@ export class UsersService {
   async findAll() {
     return this.usersRepository.findAll();
   }
-
   async update(id: string, updateUserDto: UpdateUserDto): Promise<Omit<User, 'contrasena'>> {
     return this.usersRepository.update(id, updateUserDto);
   }
