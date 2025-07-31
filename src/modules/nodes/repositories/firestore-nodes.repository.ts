@@ -7,27 +7,21 @@ import {
   CollectionReference,
   DocumentData,
   Query,
+  QueryDocumentSnapshot,
+  FirestoreDataConverter,
 } from 'firebase-admin/firestore';
 import { IngestDataDto } from 'src/modules/ingest/dto/ingest-data.dto';
 import { CoordinatesDto } from '../dto/coordinates.dto';
 
-// ==================================================================
-// 1. DEFINIR EL CONVERTER PARA LOS NODOS Y SUS LECTURAS
-// ==================================================================
-
-// Converter para los documentos de la colección principal 'nodes'
 const nodeConverter: FirestoreDataConverter<any> = {
   toFirestore(node: any): DocumentData {
     return node;
   },
   fromFirestore(snapshot: QueryDocumentSnapshot): any {
     const data = snapshot.data();
-    
-    // Lógica de seguridad para convertir Timestamps a Dates al leer
     const createdAt = (data.createdAt && typeof data.createdAt.toDate === 'function') ? data.createdAt.toDate() : null;
     const ultimaActualizacion = (data.ultimaActualizacion && typeof data.ultimaActualizacion.toDate === 'function') ? data.ultimaActualizacion.toDate() : null;
     
-    // ✅ CORRECCIÓN FINAL: Nos aseguramos de convertir también la fecha anidada en 'ultimaLectura'
     let ultimaLectura = data.ultimaLectura || null;
     if (ultimaLectura && ultimaLectura.timestamp && typeof ultimaLectura.timestamp.toDate === 'function') {
       ultimaLectura = {
@@ -41,12 +35,11 @@ const nodeConverter: FirestoreDataConverter<any> = {
       ...data,
       createdAt,
       ultimaActualizacion,
-      ultimaLectura, // Devolvemos la versión con la fecha ya convertida
+      ultimaLectura,
     };
   }
 };
 
-// Converter para los documentos de la subcolección 'readings'
 const readingConverter: FirestoreDataConverter<any> = {
     toFirestore(reading: any): DocumentData {
         return reading;
@@ -85,36 +78,18 @@ export class FirestoreNodesRepository implements NodesRepository, OnModuleInit {
     return doc.data();
   }
 
-  async findAll(
-    filters: { tipo?: string; userId?: string } = {},
-  ): Promise<any[]> {
+  async findAll(filters: { tipo?: string; userId?: string } = {}): Promise<any[]> {
     let query: Query<DocumentData> = this._nodesCollection;
-    if (filters.tipo) {
-      query = query.where('tipo', '==', filters.tipo);
-    }
-    if (filters.userId) {
-      query = query.where('userId', '==', filters.userId);
-    }
+    if (filters.tipo) query = query.where('tipo', '==', filters.tipo);
+    if (filters.userId) query = query.where('userId', '==', filters.userId);
     const snapshot = await query.get();
-    if (snapshot.empty) return [];
-    const nodes: any[] = [];
-    snapshot.forEach((doc) => {
-      nodes.push({ id: doc.id, ...doc.data() });
-    });
-    return nodes;
-
+    return snapshot.docs.map(doc => doc.data());
   }
 
   async findAllByUserId(userId: string): Promise<any[]> {
-    const snapshot = await this._nodesCollection
-      .where('userId', '==', userId)
-      .get();
+    const snapshot = await this._nodesCollection.where('userId', '==', userId).get();
     if (snapshot.empty) return [];
-    const nodes: any[] = [];
-    snapshot.forEach((doc) => {
-      nodes.push({ id: doc.id, ...doc.data() });
-    });
-    return nodes;
+    return snapshot.docs.map(doc => doc.data());
   }
 
   async findById(id: string): Promise<any | null> {
@@ -159,23 +134,12 @@ export class FirestoreNodesRepository implements NodesRepository, OnModuleInit {
   }
 
   async findHistoryById(nodeId: string): Promise<any[]> {
-    const historyRef = this._nodesCollection.doc(nodeId).collection('readings');
-    const snapshot = await historyRef
-      .orderBy('timestamp', 'desc')
-      .limit(20)
-      .get();
-    if (snapshot.empty) return [];
-    const history: any[] = [];
-    snapshot.forEach((doc) => {
-      history.push({ id: doc.id, ...doc.data() });
-    });
-    return history;
+    const historyRef = this._nodesCollection.doc(nodeId).collection('readings').withConverter(readingConverter);
+    const snapshot = await historyRef.orderBy('timestamp', 'desc').limit(20).get();
+    return snapshot.docs.map(doc => doc.data());
   }
 
-  async updateCoordinates(
-    nodeId: string,
-    coordenadas: CoordinatesDto,
-  ): Promise<void> {
+  async updateCoordinates(nodeId: string, coordenadas: CoordinatesDto): Promise<void> {
     const nodeRef = this._nodesCollection.doc(nodeId);
     await nodeRef.update({
       coordenadas: { ...coordenadas },
