@@ -5,10 +5,11 @@ import {
   ValidateNested,
   IsOptional,
   IsNumber,
+  IsBoolean, // <-- Se añade IsBoolean
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-// Definimos las coordenadas en su propia clase para reutilizarla
+// Clase CoordinatesDto (sin cambios)
 export class CoordinatesDto {
   @IsNumber()
   @IsNotEmpty()
@@ -19,12 +20,14 @@ export class CoordinatesDto {
   lng: number;
 }
 
+// Enum NodeType (sin cambios)
 export enum NodeType {
   SENSOR = 'sensor',
   REPETIDOR = 'repetidor',
   CENTRAL = 'central',
 }
 
+// ✅ CORRECCIÓN APLICADA AQUÍ
 export class CreateNodeDto {
   @IsString()
   @IsNotEmpty()
@@ -39,8 +42,24 @@ export class CreateNodeDto {
   @IsNotEmpty()
   coordenadas: CoordinatesDto;
 
-  // Este campo es opcional. Solo lo usará un admin para asignar el nodo a otro usuario.
   @IsString()
   @IsOptional()
   userId?: string;
+
+  // Propiedades opcionales del sensor añadidas
+  @IsOptional()
+  @IsNumber()
+  temperatura?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  humoDetectado?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  fuegoDetectado?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  concentracionGas?: number;
 }

@@ -30,20 +30,19 @@ export class NodesController {
     return this.nodesService.create(createNodeDto, user);
   }
 
-  @Post('heartbeat')
+  // ✅ CORRECCIÓN APLICADA AQUÍ
+  @Patch(':id/heartbeat')
   @HttpCode(HttpStatus.OK)
-  handleHeartbeat(@Body('nodeId') nodeId: string, @GetUser() user: User) {
+  handleHeartbeat(@Param('id') nodeId: string, @GetUser() user: User) {
     return this.nodesService.handleHeartbeat(nodeId, user);
   }
 
-  // ✅ NUEVO ENDPOINT PARA LA ASIGNACIÓN
   @Patch(':id/assign')
-  @HttpCode(HttpStatus.OK) // Devolvemos 200 OK si la asignación es exitosa
+  @HttpCode(HttpStatus.OK)
   assignNode(
     @Param('id') nodeId: string,
     @Body() assignNodeDto: AssignNodeDto,
   ) {
-    // No necesitamos pasar el usuario aquí a menos que queramos validar permisos específicos para esta acción
     return this.nodesService.assignUserToNode(nodeId, assignNodeDto.userId);
   }
 
