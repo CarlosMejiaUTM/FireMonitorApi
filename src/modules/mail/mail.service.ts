@@ -32,9 +32,12 @@ export class MailService {
     console.log(`✅ Correo de bienvenida enviado a ${user.correo}`);
   }
 
-  async sendPasswordResetEmail(email: string, token: string) {
-    // En producción, la URL del frontend debería venir de una variable de entorno
-    const resetUrl = `https://carlosmejiautm.github.io/firemonitor/reset-password?token=${token}`;
+ async sendPasswordResetEmail(email: string, token: string) {
+    // Leemos la URL base desde las variables de entorno
+    const baseUrl = this.configService.get<string>('FRONTEND_URL');
+    
+    // ✅ CORRECCIÓN: Construimos la URL correctamente, asegurando que el hash esté
+    const resetUrl = `${baseUrl}/#/reset-password?token=${token}`;
 
     await this.transporter.sendMail({
       from: this.configService.get<string>('MAIL_FROM'),
